@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# Env
+.env
+
+# Logs
+*.log
+
+# Build
+dist/
+build/
+
+# Go
+*.exe
+*.test
+vendor/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.
