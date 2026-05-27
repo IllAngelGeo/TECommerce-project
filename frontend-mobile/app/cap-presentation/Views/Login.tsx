@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {ActivityIndicator,Pressable,StyleSheet,Text,TextInput,useColorScheme,View,KeyboardAvoidingView,Platform,TouchableWithoutFeedback,Keyboard,Alert,} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Imagen } from "../../components/Imagen";
+import { Imagen } from "../components/Imagen";
 
 export default function DevolverLogin() {
   const [usuario, setUsuario] = useState("");
@@ -13,6 +13,8 @@ export default function DevolverLogin() {
   const [cargandoGoogle, setCargandoGoogle] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
+
+  
   const handleLogin = async () => {
     setMensaje("");
 
@@ -22,7 +24,7 @@ export default function DevolverLogin() {
     }
 
     if (password.length < 6) {
-      setMensaje("❌ La contraseña debe tener al menos 6 caracteres");
+      setMensaje("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
@@ -30,7 +32,7 @@ export default function DevolverLogin() {
 
     setTimeout(() => {
       setCargando(false);
-      router.push("/Views/Home");
+      router.push("./");
     }, 1800);
   };
 
@@ -70,14 +72,14 @@ export default function DevolverLogin() {
                 <Imagen
                   width={80}
                   height={80}
-                  source={require("../../assets/images/favicon.png")}
+                  source={require("../../../assets/images/logo_ecommerce.png")}
                 />
               </View>
             </View>
 
-            <Text style={styles.titulo}>Bienvenido</Text>
+            <Text style={styles.titulo}>TeCommerce</Text>
             <Text style={styles.subtitulo}>
-              Inicia sesión para continuar
+              Iniciar sesión
             </Text>
 
             {/* Campos de entrada */}
@@ -137,30 +139,30 @@ export default function DevolverLogin() {
             {/* Separador */}
             <View style={styles.separator}>
               <View style={styles.line} />
-              <Text style={styles.separatorText}>o continúa con</Text>
+              <Text style={styles.separatorText}>O continúa con</Text>
               <View style={styles.line} />
             </View>
 
             {/* Botón Google */}
-            <Pressable
-              style={styles.googleButton}
-              onPress={handleGoogleLogin}
-              disabled={cargandoGoogle}
-            >
-              {cargandoGoogle ? (
-                <ActivityIndicator color="#9CA3AF" />
-              ) : (
-                <>
-                  <Ionicons name="logo-google" size={20} color="#9CA3AF" />
-                  <Text style={styles.googleText}>Google</Text>
-                </>
-              )}
-            </Pressable>
+           
+           <Pressable style={styles.googleButton} onPress={handleGoogleLogin} disabled={cargandoGoogle}>
+  {cargandoGoogle ? (
+    <ActivityIndicator color="#4285F4" />
+  ) : (
+    <>
+      <Imagen source={require('../../../assets/images/icono_google.png')} style={{ width: 20, height: 20 }} />
+      <Text style={styles.googleText}>Continuar con Google</Text>
+    </>
+  )}
+</Pressable>
 
-            {/* Registro */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>¿No tienes una cuenta? </Text>
-            </View>
+{/* Registro */}
+<View style={styles.registerContainer}>
+  <Text style={styles.registerText}>¿No tienes cuenta? </Text>
+  <Pressable onPress={() => router.replace("/cap-presentation/Views/Registrate")}>
+    <Text style={styles.registerLink}>Regístrate ahora</Text>
+  </Pressable>
+</View>
 
             {/* Mensaje de error */}
             {!!mensaje && (
@@ -179,6 +181,7 @@ export default function DevolverLogin() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#000",
   },
 
   content: {
@@ -214,9 +217,11 @@ const styles = StyleSheet.create({
 
   subtitulo: {
     fontSize: 14,
-    color: "#9CA3AF",
+    color: "#FFFFFF",
     marginBottom: 40,
     textAlign: "center",
+    fontWeight: "bold",
+
   },
 
   inputContainer: {

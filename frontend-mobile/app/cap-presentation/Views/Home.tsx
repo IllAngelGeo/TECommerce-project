@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TextoNormal } from "../../components/TextoNormal";
-import { Titulos } from "../../components/Titulos";
+import { TextoNormal } from "../components/TextoNormal";
+import { Titulos } from "../components/Titulos";
 
 export default function DevolverHome() {
   return (
