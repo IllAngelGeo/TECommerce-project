@@ -124,11 +124,10 @@ export default function RegistroPage() {
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent mb-2">
                 TeCommerce
               </h1>
-              <p className="text-gray-400 text-sm">Crea tu cuenta</p>
             </div>
 
             <h3 className="text-xl font-bold text-white mb-6 text-center mt-6">
-              Registro {step}/2
+              Crear cuenta {step}/2
             </h3>
 
             {/* Indicador de progreso */}
@@ -264,7 +263,7 @@ export default function RegistroPage() {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                   </svg>
                   <span className="text-white font-medium">
-                    {isGoogleLoading ? "Conectando..." : "Continuar con Google"}
+                    {isGoogleLoading ? "Conectando..." : " Google"}
                   </span>
                 </button>
               </div>
