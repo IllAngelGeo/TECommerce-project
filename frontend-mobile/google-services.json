@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "477383599734",
+    "project_id": "tecommerce-efde4",
+    "storage_bucket": "tecommerce-efde4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:477383599734:android:e720af9f050e1e0f30e157",
+        "android_client_info": {
+          "package_name": "com.kevin_alexis.frontendmobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "477383599734-gf4e2hh44f04jda9idmhrbgbf90snl4a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvWXEk2HH1Qk7Fqi2Yekslw-EzvlNJLV0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "477383599734-gf4e2hh44f04jda9idmhrbgbf90snl4a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
