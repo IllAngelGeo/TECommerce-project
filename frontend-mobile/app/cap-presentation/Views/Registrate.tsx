@@ -7,6 +7,10 @@
     import { SafeAreaView } from 'react-native-safe-area-context';
     import DateTimePicker from '@react-native-community/datetimepicker';
 
+import { createUserWithEmailAndPassword } from "firebase/auth"; 
+import {doc,setDoc,serverTimestamp} from "firebase/firestore";
+import {auth,db} from "../../firebase/firebase";
+
     export default function DevolverRegistro() {
 
         const [fecha, setFecha] = useState(new Date());
@@ -80,16 +84,63 @@
         setMensaje("");
     };
 
-    const handleRegister = () => {
-        if (validarPaso2()) {
-        setCargando(true);
-        setTimeout(() => {
-            setCargando(false);
-            router.push("/cap-presentation/Views/Login");
-        }, 1800);
-        }
-    };
+   const handleRegister = async () => {
 
+  if (!validarPaso2()) return;
+
+  try {
+
+    setCargando(true);
+
+    // CREAR USUARIO EN FIREBASE AUTH
+    const credencial =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    const uid = credencial.user.uid;
+
+    // GUARDAR DATOS EN FIRESTORE
+    await setDoc(doc(db, "users", uid), {
+
+      nombre,
+      apellidoPaterno,
+      apellidoMaterno,
+      fechaNacimiento: fechaTexto,
+
+      email,
+
+      roles: {
+        cliente: true,
+        vendedor: false
+      },
+
+      createdAt: serverTimestamp()
+
+    });
+
+    setMensaje("");
+
+    router.replace("/cap-presentation/Views/Login");
+
+  } catch (error: any) {
+
+    console.log(error);
+
+    if (error.code === "auth/email-already-in-use") {
+      setMensaje("El correo ya está registrado");
+    } else if (error.code === "auth/invalid-email") {
+      setMensaje("Correo inválido");
+    } else {
+      setMensaje("Error al registrar usuario");
+    }
+
+  } finally {
+    setCargando(false);
+  }
+};
     const handleGoogleRegister = () => {
         setCargandoGoogle(true);
         setMensaje("");

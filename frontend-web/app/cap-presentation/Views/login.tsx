@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { loginGoogle } from "../../firebase/firebase";
 
 
 export default function Home() {
@@ -26,16 +27,29 @@ export default function Home() {
     }, 1500);
   };
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    
-    setTimeout(() => {
-      setIsGoogleLoading(false);
-      console.log("Google Login iniciado");
-      // Aquí iría la lógica real de autenticación con Google
-    }, 1500);
-  };
 
+const handleGoogleLogin = async () => {
+
+  try {
+
+    setIsGoogleLoading(true);
+
+    const result = await loginGoogle();
+
+    console.log("Usuario:", result.user);
+
+    router.push("/home");
+
+  } catch (error) {
+
+    console.log("ERROR GOOGLE:", error);
+
+  } finally {
+
+    setIsGoogleLoading(false);
+
+  }
+};
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-8">
       <div className="w-full max-w-7xl h-[88vh] rounded-3xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl flex">

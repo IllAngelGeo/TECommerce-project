@@ -1,9 +1,20 @@
+
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useState } from "react";
 import {ActivityIndicator,Pressable,StyleSheet,Text,TextInput,useColorScheme,View,KeyboardAvoidingView,Platform,TouchableWithoutFeedback,Keyboard,Alert,} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Imagen } from "../components/Imagen";
+import {signInWithEmailAndPassword } from "firebase/auth"; 
+import {auth} from "../../firebase/firebase";
+import { useEffect } from "react";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import { GoogleAuthProvider,signInWithCredential,} from "firebase/auth";
+
+
+WebBrowser.maybeCompleteAuthSession();
+
 
 export default function DevolverLogin() {
   const [usuario, setUsuario] = useState("");
@@ -14,40 +25,134 @@ export default function DevolverLogin() {
   const [mensaje, setMensaje] = useState("");
 
 
-  
-  const handleLogin = async () => {
-    setMensaje("");
 
-    if (!usuario || !password) {
-      setMensaje("Completa todos los campos");
-      return;
-    }
+  const [request, response, promptAsync] =
+  Google.useAuthRequest({
+    clientId:
+      "477383599734-gf4e2hh44f04jda9idmhrbgbf90snl4a.apps.googleusercontent.com",
 
-    if (password.length < 6) {
-      setMensaje("La contraseña debe tener al menos 6 caracteres");
-      return;
+    androidClientId:
+      "477383599734-ag144p058hd7jaiedium21jelha6rbk2.apps.googleusercontent.com",
+  });
+
+useEffect(() => {
+
+  const autenticarGoogle = async () => {
+
+    if (response?.type === "success") {
+
+      try {
+
+const idToken =
+  response.authentication?.idToken ||
+  response.params?.id_token;
+
+        if (!idToken) {
+
+          setMensaje(
+            "No se obtuvo token de Google"
+          );
+
+          return;
+        }
+
+        const credential =
+          GoogleAuthProvider.credential(
+            idToken
+          );
+
+        await signInWithCredential(
+          auth,
+          credential
+        );
+
+        router.replace(
+          "/cap-presentation/Views/Home"
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        setMensaje(
+          "Error al iniciar sesión con Google"
+        );
+
+      } finally {
+
+        setCargandoGoogle(false);
+
+      }
     }
+  };
+
+  autenticarGoogle();
+
+}, [response]);
+ const handleLogin = async () => {
+
+  setMensaje("");
+
+  if (!usuario || !password) {
+    setMensaje("Completa todos los campos");
+    return;
+  }
+
+  try {
 
     setCargando(true);
 
-    setTimeout(() => {
-      setCargando(false);
-      router.push("./");
-    }, 1800);
-  };
+    await signInWithEmailAndPassword(
+      auth,
+      usuario,
+      password
+    );
 
-  const handleGoogleLogin = () => {
-    setCargandoGoogle(true);
-    setMensaje("");
+    router.replace("/cap-presentation/Views/Home");
 
-    setTimeout(() => {
-      setCargandoGoogle(false);
-      Alert.alert("Google Sign In", "Funcionalidad en desarrollo");
-    }, 1500);
-  };
+  } catch (error: any) {
 
+    console.log(error);
 
-  const handleForgotPassword = () => {
+    if (error.code === "auth/user-not-found") {
+      setMensaje("Usuario no encontrado");
+    } else if (
+      error.code === "auth/wrong-password"
+    ) {
+      setMensaje("Contraseña incorrecta");
+    } else if (
+      error.code === "auth/invalid-credential"
+    ) {
+      setMensaje("Credenciales inválidas");
+    } else {
+      setMensaje("Error al iniciar sesión");
+    }
+
+  } finally {
+    setCargando(false);
+  }
+};
+
+const handleGoogleLogin = async () => {
+
+  setCargandoGoogle(true);
+  setMensaje("");
+
+  try {
+
+    await promptAsync();
+
+  } catch (error) {
+
+    console.log(error);
+
+    setMensaje("Error con Google");
+
+    setCargandoGoogle(false);
+  }
+};
+
+const handleForgotPassword = () => {
     Alert.alert(
       "Recuperar contraseña",
       "Se enviará un enlace a tu correo electrónico",
