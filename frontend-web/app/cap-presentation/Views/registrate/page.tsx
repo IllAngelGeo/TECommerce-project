@@ -3,7 +3,10 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { loginGoogle, registerUser } from "../../../firebase/firebase";
+import { db } from "../../../firebase/firebase";
 
+import { doc,getDoc,setDoc,serverTimestamp} from "firebase/firestore";
 
 export default function RegistroPage() {
   const [step, setStep] = useState(1); // 1: Datos personales, 2: Datos de cuenta
@@ -23,7 +26,7 @@ export default function RegistroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  // Estados comunes
+  // Estados de las acciones que esten
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -64,40 +67,116 @@ export default function RegistroPage() {
     return true;
   };
 
+  /* Acción de boton de siguiente  */
   const handleSiguiente = () => {
     if (validarPaso1()) {
       setStep(2);
     }
   };
 
+  /* Botón de atras */
   const handleAtras = () => {
     setStep(1);
     setMensaje("");
   };
 
-  const handleRegister = () => {
-    if (validarPaso2()) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        console.log("Registro:", { nombre, apellidoPaterno, apellidoMaterno, fechaTexto, email, password });
-        // Aquí redirigir al login
-        // router.push("/login");
-      }, 1800);
+
+  /* Registrar con los campos normales  */
+const handleRegister = async () => {
+  if (!validarPaso2()) return;
+
+  try {
+    setIsLoading(true);
+
+    const result = await registerUser(email, password);
+
+    const user = result.user;
+
+    await setDoc(doc(db, "users", user.uid), {nombre,apellidoPaterno,apellidoMaterno,fechaNacimiento: fechaTexto,email,
+      roles: {
+        cliente: true,
+        vendedor: false,
+      },
+
+      createdAt: serverTimestamp(),
+    });
+
+    router.push("../cap-presentation/Views/completar_perfil");
+
+  } catch (error: any) {
+
+    switch (error.code) {
+
+      case "auth/email-already-in-use":
+        setMensaje("Este correo ya está registrado");
+        break;
+
+      case "auth/weak-password":
+        setMensaje("La contraseña es muy débil");
+        break;
+
+      case "auth/invalid-email":
+        setMensaje("Correo inválido");
+        break;
+
+      default:
+        setMensaje("Error al registrar usuario");
+        break;
     }
-  };
 
-  const handleGoogleRegister = () => {
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+/* Registrar con Google */
+const handleGoogleRegister = async () => {
+  try {
+
     setIsGoogleLoading(true);
-    setMensaje("");
+    const result = await loginGoogle();
 
-    setTimeout(() => {
-      setIsGoogleLoading(false);
-      console.log("Google Registro iniciado");
-    }, 1500);
-  };
+    const user = result.user;
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
 
-  // Indicador de progreso
+    if (!userSnap.exists()) {
+
+      await setDoc(userRef, {
+        nombre: user.displayName || "",
+        email: user.email,
+        foto: user.photoURL || "",
+        apellidoPaterno: "",
+        apellidoMaterno: "",
+        fechaNacimiento: "",
+
+        roles: {
+          cliente: true,
+          vendedor: false,
+        },
+
+        createdAt: serverTimestamp(),
+      });
+
+      console.log("Usuario creado en Firestore");
+    }
+
+    router.push("/home");
+
+  } catch (error) {
+
+    console.log(error);
+
+    setMensaje("No se pudo registrar con Google");
+
+  } finally {
+
+    setIsGoogleLoading(false);
+
+  }
+};
+
+// Indicador de progreso
   const ProgressIndicator = () => (
     <div className="flex items-center justify-center mb-8">
       <div className={`w-3 h-3 rounded-full transition-all ${step === 1 ? 'bg-white w-4 h-4' : 'bg-white/30'}`} />
