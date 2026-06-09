@@ -5,6 +5,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { loginGoogle } from "../../firebase/firebase";
 
+/** Hacer documento en la base de datos */
+import { db } from "../../firebase/firebase";
+import {doc,getDoc,setDoc,serverTimestamp,} from "firebase/firestore";
 
 export default function Home() {
 
@@ -17,6 +20,7 @@ export default function Home() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -27,18 +31,48 @@ export default function Home() {
     }, 1500);
   };
 
+/* Logear por Google */
 
 const handleGoogleLogin = async () => {
-
   try {
-
     setIsGoogleLoading(true);
 
     const result = await loginGoogle();
 
-    console.log("Usuario:", result.user);
+    const user = result.user;
 
-    router.push("/home");
+    const userRef = doc(db, "users", user.uid);
+
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+
+      await setDoc(userRef, {
+
+        nombre: user.displayName || "",
+
+        email: user.email || "",
+
+        foto: user.photoURL || "",
+
+        roles: {
+          cliente: true,
+          vendedor: false,
+        },
+
+        createdAt: serverTimestamp(),
+
+      });
+
+      console.log("Usuario creado en Firestore");
+
+    } else {
+
+      console.log("Usuario ya existe");
+
+    }
+
+    router.push("../cap-presentation/Views/completar_perfil");
 
   } catch (error) {
 
@@ -50,16 +84,19 @@ const handleGoogleLogin = async () => {
 
   }
 };
+
+
+/* Imprimir la vista */
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-8">
       <div className="w-full max-w-7xl h-[88vh] rounded-3xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl flex">
         
-        {/* IZQUIERDA - IMAGEN */}
+        {/* Imagen, la que esta en la izquierda */}
         <div className="w-1/2 flex justify-center items-center bg-black">
           <Image src="/Images/logo_ecommerce.png" alt="Logo" width={500} height={500} priority className="object-contain"/>
         </div>
 
-        {/* DERECHA - LOGIN */}
+        {/*Del lado derecho el login */}
         <div className="w-1/2 flex items-center justify-center bg-black/70 p-14">
           <div className="w-full max-w-md">
 
@@ -155,7 +192,7 @@ const handleGoogleLogin = async () => {
               {/* REGISTRO */}
                <div className="text-center text-sm text-gray-400 mt-6">
                 ¿No tienes cuenta?{" "}
-            <button type="button"  onClick={() => router.push("/registrate")} className="text-white hover:text-gray-400"> Regístrate ahora </button></div>
+            <button type="button"  onClick={() => router.push("../cap-presentation/Views/registrate/")} className="text-white hover:text-gray-400"> Regístrate ahora </button></div>
             </form>
           </div>
         </div>
