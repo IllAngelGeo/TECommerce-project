@@ -5,9 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { loginGoogle } from "../../firebase/firebase";
 
-/** Hacer documento en la base de datos */
-import { db } from "../../firebase/firebase";
-import {doc,getDoc,setDoc,serverTimestamp,} from "firebase/firestore";
 
 export default function Home() {
 
@@ -41,36 +38,6 @@ const handleGoogleLogin = async () => {
 
     const user = result.user;
 
-    const userRef = doc(db, "users", user.uid);
-
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-
-      await setDoc(userRef, {
-
-        nombre: user.displayName || "",
-
-        email: user.email || "",
-
-        foto: user.photoURL || "",
-
-        roles: {
-          cliente: true,
-          vendedor: false,
-        },
-
-        createdAt: serverTimestamp(),
-
-      });
-
-      console.log("Usuario creado en Firestore");
-
-    } else {
-
-      console.log("Usuario ya existe");
-
-    }
 
     router.push("../cap-presentation/Views/completar_perfil");
 
@@ -192,7 +159,7 @@ const handleGoogleLogin = async () => {
               {/* REGISTRO */}
                <div className="text-center text-sm text-gray-400 mt-6">
                 ¿No tienes cuenta?{" "}
-            <button type="button"  onClick={() => router.push("../cap-presentation/Views/registrate/")} className="text-white hover:text-gray-400"> Regístrate ahora </button></div>
+            <button type="button"  onClick={() => router.push("/cap-presentation/Views/registrate/")} className="text-white hover:text-gray-400"> Regístrate ahora </button></div>
             </form>
           </div>
         </div>
