@@ -202,15 +202,15 @@ const handleForgotPassword = async () => {
 
             {/* Campos de entrada */}
             <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-              <TextInput style={styles.input} placeholder="Usuario o correo electrónico" placeholderTextColor="#6B7280" value={usuario} onChangeText={setUsuario} autoCapitalize="none" autoCorrect={false} />
+             <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+             <TextInput style={styles.input} placeholder="Usuario o correo electrónico" placeholderTextColor="#6B7280" value={usuario} onChangeText={setUsuario} autoCapitalize="none" autoCorrect={false} />
             </View>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+             <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205176/candado_iplsp7.png", }} style={{ width: 20, height: 20}}/> 
               <TextInput style={styles.input} placeholder="Contraseña" placeholderTextColor="#6B7280" secureTextEntry={!verPassword} value={password} onChangeText={setPassword} />
               <Pressable onPress={() => setVerPassword(!verPassword)}>
-                <Ionicons name={verPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF"/>
+                <Ionicons name={verPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#FFFFFF"/>
               </Pressable>
             </View>
 

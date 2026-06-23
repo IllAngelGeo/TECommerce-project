@@ -194,13 +194,11 @@ export default function DevolverRegistro() {
                     <LinearGradient colors={["#000000", "#000000", "#1A1A1A"]} style={styles.container}>
                         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} >
                             
-                            {/* Logo 
                             <View style={styles.logoContainer}>
                                 <View style={styles.logoWrapper}>
-                                    <Imagen width={80} height={80} source={require("../../../assets/images/")} />
-                                </View>
+                           <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782204337/logo_tecommerce_rzx7yp.png", }} style={{ width: 80, height: 80}}/> 
+                  </View>
                             </View>
-                            */}
                             
                             <Text style={styles.titulo}>TeCommerce</Text>
                             <Text style={styles.subtitulo}> Crear cuenta {step}/2 </Text>
@@ -211,67 +209,31 @@ export default function DevolverRegistro() {
                                     <Text style={styles.stepTitle}>Datos personales</Text>
                                     
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-                                        <TextInput 
-                                            style={styles.input} 
-                                            placeholder="Nombre" 
-                                            placeholderTextColor="#6B7280" 
-                                            value={nombre} 
-                                            onChangeText={setNombre} 
-                                            autoCapitalize="words" 
-                                        />
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+                                        <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor="#6B7280" value={nombre} onChangeText={setNombre} autoCapitalize="words" />
                                     </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-                                        <TextInput 
-                                            style={styles.input} 
-                                            placeholder="Apellido paterno" 
-                                            placeholderTextColor="#6B7280" 
-                                            value={apellidoPaterno} 
-                                            onChangeText={setApellidoPaterno} 
-                                            autoCapitalize="words" 
-                                        />
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+                                        <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor="#6B7280" value={apellidoPaterno} onChangeText={setApellidoPaterno} autoCapitalize="words" />
                                     </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-                                        <TextInput 
-                                            style={styles.input} 
-                                            placeholder="Apellido materno" 
-                                            placeholderTextColor="#6B7280" 
-                                            value={apellidoMaterno} 
-                                            onChangeText={setApellidoMaterno} 
-                                            autoCapitalize="words" 
-                                        />
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+                                        <TextInput style={styles.input} placeholder="Apellido materno" placeholderTextColor="#6B7280" value={apellidoMaterno} onChangeText={setApellidoMaterno} autoCapitalize="words" />
                                     </View>
 
                                     <Pressable onPress={() => setShowDatePicker(true)}>
                                         <View style={styles.inputContainer}>
-                                            <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
-                                            <TextInput 
-                                                style={styles.input} 
-                                                placeholder="Fecha de nacimiento" 
-                                                placeholderTextColor="#6B7280" 
-                                                value={fechaTexto} 
-                                                editable={false} 
-                                                pointerEvents="none" 
-                                            />
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205176/calendario_gvrcwv.png", }} style={{ width: 20, height: 20}}/> 
+                                            <TextInput style={styles.input} placeholder="Fecha de nacimiento" placeholderTextColor="#6B7280" value={fechaTexto} editable={false} pointerEvents="none" />
                                             <Ionicons name="chevron-down-outline" size={20} color="#9CA3AF" />
                                         </View>
                                     </Pressable>
 
-                                    {/* NUEVO: Campo de teléfono */}
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="call-outline" size={20} color="#9CA3AF" />
-                                        <TextInput 
-                                            style={styles.input} 
-                                            placeholder="Teléfono (10 dígitos)" 
-                                            placeholderTextColor="#6B7280" 
-                                            value={telefono} 
-                                            onChangeText={handleTelefonoChange} 
-                                            keyboardType="phone-pad"
-                                            maxLength={14} // (XXX) XXX-XXXX
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/telefono_k2jkam.png", }} style={{ width: 20, height: 20}}/> 
+                                        <TextInput style={styles.input} placeholder="Teléfono (10 dígitos)" placeholderTextColor="#6B7280" value={telefono} onChangeText={handleTelefonoChange} keyboardType="phone-pad" maxLength={14}
                                         />
                                     </View>
 
@@ -288,20 +250,12 @@ export default function DevolverRegistro() {
                                     <Text style={styles.stepTitle}>Datos de cuenta</Text>
                                     
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
-                                        <TextInput 
-                                            style={styles.input} 
-                                            placeholder="Correo electrónico" 
-                                            placeholderTextColor="#6B7280" 
-                                            value={email} 
-                                            onChangeText={setEmail} 
-                                            autoCapitalize="none" 
-                                            keyboardType="email-address"
-                                        />
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205176/correo_cnvdey.png", }} style={{ width: 20, height: 20}}/> 
+                                        <TextInput style={styles.input} placeholder="Correo electrónico" placeholderTextColor="#6B7280" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address"/>
                                     </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205176/candado_iplsp7.png", }} style={{ width: 20, height: 20}}/> 
                                         <TextInput 
                                             style={styles.input} 
                                             placeholder="Contraseña" 
@@ -316,15 +270,8 @@ export default function DevolverRegistro() {
                                     </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
-                                        <TextInput 
-                                            style={styles.input} 
-                                            placeholder="Confirmar contraseña" 
-                                            placeholderTextColor="#6B7280" 
-                                            secureTextEntry={!verConfirmPassword} 
-                                            value={confirmPassword} 
-                                            onChangeText={setConfirmPassword} 
-                                        />
+                                            <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205176/candado_iplsp7.png", }} style={{ width: 20, height: 20}}/> 
+                                            <TextInput style={styles.input} placeholder="Confirmar contraseña" placeholderTextColor="#6B7280" secureTextEntry={!verConfirmPassword} value={confirmPassword} onChangeText={setConfirmPassword} />
                                         <Pressable onPress={() => setVerConfirmPassword(!verConfirmPassword)}>
                                             <Ionicons name={verConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
                                         </Pressable>
@@ -337,11 +284,7 @@ export default function DevolverRegistro() {
                                             <Text style={styles.textoBotonAtras}>Atrás</Text>
                                         </Pressable>
 
-                                        <Pressable 
-                                            style={[styles.botonRegistrar, cargando && styles.botonDisabled]} 
-                                            onPress={handleRegister} 
-                                            disabled={cargando} 
-                                        >
+                                        <Pressable style={[styles.botonRegistrar, cargando && styles.botonDisabled]} onPress={handleRegister} disabled={cargando} >
                                             {cargando ? (
                                                 <ActivityIndicator color="#FFFFFF" />
                                             ) : (
@@ -369,10 +312,8 @@ export default function DevolverRegistro() {
                                             <ActivityIndicator color="#4285F4" />
                                         ) : (
                                             <>
-                                                {/* 
-                                                    <Imagen source={require('../../../assets/images/icono_google.png')} style={{ width: 20, height: 20 }} />
-                                                */}
-                                                <Text style={styles.googleText}>Google</Text>
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782204067/icono_google_uktsac.png", }} style={{ width: 20, height: 20}}/> 
+                                        <Text style={styles.googleText}>Google</Text>
                                             </>
                                         )}
                                     </Pressable>
@@ -578,7 +519,7 @@ const styles = StyleSheet.create({
 
     textoBoton: {
         color: "#000000",
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: "bold",
     },
 
