@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { loginGoogle } from "../../firebase/firebase";
+import { loginGoogle, loginUser } from "../../firebase/firebase";
 
 
 export default function Home() {
@@ -19,17 +19,33 @@ export default function Home() {
 
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+
+  try {
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log("Login:", { username, password, rememberMe });
-    }, 1500);
-  };
+    const result = await loginUser(
+      username,
+      password
+    );
 
+    console.log("Login correcto:", result.user);
+
+    router.push("/home");
+
+  } catch (error: any) {
+
+    console.log("ERROR LOGIN:", error);
+
+    alert("Correo o contraseña incorrectos");
+
+  } finally {
+
+    setIsLoading(false);
+
+  }
+};
 /* Logear por Google */
-
 const handleGoogleLogin = async () => {
   try {
     setIsGoogleLoading(true);

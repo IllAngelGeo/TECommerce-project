@@ -1,28 +1,28 @@
-    import { LinearGradient } from "expo-linear-gradient";
-    import { router } from "expo-router";
-    import { useState } from "react";
-    import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView, Modal } from "react-native";
-    import { Ionicons } from "@expo/vector-icons";
-    import { Imagen } from "../components/Imagen";
-    import { SafeAreaView } from 'react-native-safe-area-context';
-    import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView, Modal } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Imagen } from "../components/Imagen";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { createUserWithEmailAndPassword } from "firebase/auth"; 
 import {doc,setDoc,serverTimestamp} from "firebase/firestore";
 import {auth,db} from "../../firebase/firebase";
 
-    export default function DevolverRegistro() {
+export default function DevolverRegistro() {
 
-        const [fecha, setFecha] = useState(new Date());
-        const [showDatePicker, setShowDatePicker] = useState(false);
-        const [step, setStep] = useState(1); // 1: Datos personales, 2: Datos de cuenta
+    const [fecha, setFecha] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [step, setStep] = useState(1); // 1: Datos personales, 2: Datos de cuenta
     
     // Paso 1 - Datos personales
     const [nombre, setNombre] = useState("");
     const [apellidoPaterno, setApellidoPaterno] = useState("");
     const [apellidoMaterno, setApellidoMaterno] = useState("");
     const [fechaTexto, setFechaTexto] = useState("");
-    
+    const [telefono, setTelefono] = useState(""); // NUEVO: estado para teléfono
     
     // Paso 2 - Datos de cuenta
     const [email, setEmail] = useState("");
@@ -36,13 +36,43 @@ import {auth,db} from "../../firebase/firebase";
     const [cargandoGoogle, setCargandoGoogle] = useState(false);
     const [mensaje, setMensaje] = useState("");
 
+    // Función para formatear teléfono
+    const formatearTelefono = (texto: string) => {
+        // Solo permitir dígitos
+        const soloDigitos = texto.replace(/\D/g, '');
+        
+        // Limitar a 10 dígitos
+        const limitado = soloDigitos.slice(0, 10);
+        
+        // Formatear como (XXX) XXX-XXXX
+        if (limitado.length <= 3) {
+            return limitado;
+        } else if (limitado.length <= 6) {
+            return `(${limitado.slice(0, 3)}) ${limitado.slice(3)}`;
+        } else {
+            return `(${limitado.slice(0, 3)}) ${limitado.slice(3, 6)}-${limitado.slice(6, 10)}`;
+        }
+    };
+
+    const handleTelefonoChange = (texto: string) => {
+        const formateado = formatearTelefono(texto);
+        setTelefono(formateado);
+    };
 
     // Validar paso 1
     const validarPaso1 = () => {
-        if (!nombre || !apellidoPaterno || !apellidoMaterno || !fechaTexto) {
-        setMensaje("Completa todos los campos");
-        return false;
+        if (!nombre || !apellidoPaterno || !apellidoMaterno || !fechaTexto || !telefono) {
+            setMensaje("Completa todos los campos");
+            return false;
         }
+
+        // Validar que el teléfono tenga al menos 10 dígitos
+        const telefonoLimpio = telefono.replace(/\D/g, '');
+        if (telefonoLimpio.length < 10) {
+            setMensaje("Ingresa un número de teléfono válido (10 dígitos)");
+            return false;
+        }
+
         setMensaje("");
         return true;
     };
@@ -50,24 +80,24 @@ import {auth,db} from "../../firebase/firebase";
     // Validar paso 2
     const validarPaso2 = () => {
         if (!email || !password || !confirmPassword) {
-        setMensaje("Completa todos los campos");
-        return false;
+            setMensaje("Completa todos los campos");
+            return false;
         }
 
         if (password.length < 6) {
-        setMensaje("La contraseña debe tener al menos 6 caracteres");
-        return false;
+            setMensaje("La contraseña debe tener al menos 6 caracteres");
+            return false;
         }
 
         if (password !== confirmPassword) {
-        setMensaje("Las contraseñas no coinciden");
-        return false;
+            setMensaje("Las contraseñas no coinciden");
+            return false;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-        setMensaje("Ingresa un correo electrónico válido");
-        return false;
+            setMensaje("Ingresa un correo electrónico válido");
+            return false;
         }
         setMensaje("");
         return true;
@@ -75,7 +105,7 @@ import {auth,db} from "../../firebase/firebase";
 
     const handleSiguiente = () => {
         if (validarPaso1()) {
-        setStep(2);
+            setStep(2);
         }
     };
 
@@ -85,58 +115,65 @@ import {auth,db} from "../../firebase/firebase";
     };
 
    const handleRegister = async () => {
-
   if (!validarPaso2()) return;
 
   try {
-
     setCargando(true);
 
-    // CREAR USUARIO EN FIREBASE AUTH
-    const credencial =
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+    const telefonoLimpio = telefono.replace(/\D/g, "");
+
+    // 1. CREAR USUARIO EN FIREBASE PRIMERO
+    const credencial = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
     const uid = credencial.user.uid;
 
-    // GUARDAR DATOS EN FIRESTORE
-    await setDoc(doc(db, "users", uid), {
+    console.log("UID FIREBASE:", uid);
 
+    // 2. AHORA SÍ LLAMAR A GO CON EL UID
+    const response = await fetch("http://192.168.0.86:8080/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id_firebase: uid,
+        email: email.trim(),
+        nombre: nombre.trim(),
+        apellido_paterno: apellidoPaterno.trim(),
+        apellido_materno: apellidoMaterno.trim(),
+        telefono: telefonoLimpio,
+        provider: "email",
+      }),
+    });
+
+    const data = await response.json();
+    console.log("RESPUESTA GO:", data);
+
+    if (!response.ok) {
+      setMensaje(data.error || "Error en backend");
+      return;
+    }
+
+    // 3. FIRESTORE (opcional pero recomendado)
+    await setDoc(doc(db, "users", uid), {
+      idFirebase: uid,
+      email,
       nombre,
       apellidoPaterno,
       apellidoMaterno,
-      fechaNacimiento: fechaTexto,
-
-      email,
-
-      roles: {
-        cliente: true,
-        vendedor: false
-      },
-
-      createdAt: serverTimestamp()
-
+      telefono: telefonoLimpio,
+      provider: "email",
+      createdAt: serverTimestamp(),
     });
 
-    setMensaje("");
-
     router.replace("/cap-presentation/Views/Login");
-
-  } catch (error: any) {
-
-    console.log(error);
-
-    if (error.code === "auth/email-already-in-use") {
-      setMensaje("El correo ya está registrado");
-    } else if (error.code === "auth/invalid-email") {
-      setMensaje("Correo inválido");
-    } else {
-      setMensaje("Error al registrar usuario");
-    }
-
+  } catch (error) {
+    console.log("ERROR REGISTER:", error);
+    setMensaje("Error de conexión");
   } finally {
     setCargando(false);
   }
@@ -146,171 +183,248 @@ import {auth,db} from "../../firebase/firebase";
         setMensaje("");
 
         setTimeout(() => {
-        setCargandoGoogle(false);
+            setCargandoGoogle(false);
         }, 1500);
     };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }} >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <LinearGradient colors={["#000000", "#000000", "#1A1A1A"]} style={styles.container}>
-                <ScrollView  contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} >
-                
-                {/* Logo */}
-                <View style={styles.logoContainer}>
-                    <View style={styles.logoWrapper}>
-                    <Imagen width={80} height={80} source={require("../../../assets/images/logo_ecommerce.png")} />
-                    </View>
-                </View>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }} >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <LinearGradient colors={["#000000", "#000000", "#1A1A1A"]} style={styles.container}>
+                        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} >
+                            
+                            {/* Logo 
+                            <View style={styles.logoContainer}>
+                                <View style={styles.logoWrapper}>
+                                    <Imagen width={80} height={80} source={require("../../../assets/images/")} />
+                                </View>
+                            </View>
+                            */}
+                            
+                            <Text style={styles.titulo}>TeCommerce</Text>
+                            <Text style={styles.subtitulo}> Crear cuenta {step}/2 </Text>
 
-                <Text style={styles.titulo}>TeCommerce</Text>
-                <Text style={styles.subtitulo}> Crear cuenta {step}/2 </Text>
+                            {/* PASO 1 - Datos Personales */}
+                            {step === 1 && (
+                                <View>
+                                    <Text style={styles.stepTitle}>Datos personales</Text>
+                                    
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Nombre" 
+                                            placeholderTextColor="#6B7280" 
+                                            value={nombre} 
+                                            onChangeText={setNombre} 
+                                            autoCapitalize="words" 
+                                        />
+                                    </View>
 
-                {/* PASO 1 - Datos Personales */}
-                {step === 1 && (
-                    <View>
-                    <Text style={styles.stepTitle}>Datos personales</Text>
-                    
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor="#6B7280" value={nombre} onChangeText={setNombre} autoCapitalize="words" />
-                    </View>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Apellido paterno" 
+                                            placeholderTextColor="#6B7280" 
+                                            value={apellidoPaterno} 
+                                            onChangeText={setApellidoPaterno} 
+                                            autoCapitalize="words" 
+                                        />
+                                    </View>
 
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor="#6B7280" value={apellidoPaterno} onChangeText={setApellidoPaterno} autoCapitalize="words" />
-                    </View>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Apellido materno" 
+                                            placeholderTextColor="#6B7280" 
+                                            value={apellidoMaterno} 
+                                            onChangeText={setApellidoMaterno} 
+                                            autoCapitalize="words" 
+                                        />
+                                    </View>
 
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Apellido materno" placeholderTextColor="#6B7280" value={apellidoMaterno} onChangeText={setApellidoMaterno} autoCapitalize="words" />
-                    </View>
+                                    <Pressable onPress={() => setShowDatePicker(true)}>
+                                        <View style={styles.inputContainer}>
+                                            <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
+                                            <TextInput 
+                                                style={styles.input} 
+                                                placeholder="Fecha de nacimiento" 
+                                                placeholderTextColor="#6B7280" 
+                                                value={fechaTexto} 
+                                                editable={false} 
+                                                pointerEvents="none" 
+                                            />
+                                            <Ionicons name="chevron-down-outline" size={20} color="#9CA3AF" />
+                                        </View>
+                                    </Pressable>
 
-                        <Pressable onPress={() => setShowDatePicker(true)}>
-                        <View style={styles.inputContainer}>
-                        <Ionicons name="calendar-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Fecha de nacimiento" placeholderTextColor="#6B7280" value={fechaTexto} editable={false} pointerEvents="none" />
-                        <Ionicons name="chevron-down-outline" size={20} color="#9CA3AF" />
-                        </View>
-                    </Pressable>
+                                    {/* NUEVO: Campo de teléfono */}
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="call-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Teléfono (10 dígitos)" 
+                                            placeholderTextColor="#6B7280" 
+                                            value={telefono} 
+                                            onChangeText={handleTelefonoChange} 
+                                            keyboardType="phone-pad"
+                                            maxLength={14} // (XXX) XXX-XXXX
+                                        />
+                                    </View>
 
-                    <Pressable style={styles.botonSiguiente} onPress={handleSiguiente} >
-                        <Text style={styles.textoBoton}>Siguiente</Text>
-                        <Ionicons name="arrow-forward-outline" size={20} color="#000000" />
-                    </Pressable>
-                    </View>
-                )}
+                                    <Pressable style={styles.botonSiguiente} onPress={handleSiguiente} >
+                                        <Text style={styles.textoBoton}>Siguiente</Text>
+                                        <Ionicons name="arrow-forward-outline" size={20} color="#000000" />
+                                    </Pressable>
+                                </View>
+                            )}
 
-                {/* PASO 2 - Datos de Cuenta */}
-                {step === 2 && (
-                    <View>
-                    <Text style={styles.stepTitle}>Datos de cuenta</Text>
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Correo electrónico" placeholderTextColor="#6B7280" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address"/>
-                    </View>
+                            {/* PASO 2 - Datos de Cuenta */}
+                            {step === 2 && (
+                                <View>
+                                    <Text style={styles.stepTitle}>Datos de cuenta</Text>
+                                    
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Correo electrónico" 
+                                            placeholderTextColor="#6B7280" 
+                                            value={email} 
+                                            onChangeText={setEmail} 
+                                            autoCapitalize="none" 
+                                            keyboardType="email-address"
+                                        />
+                                    </View>
 
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Contraseña" placeholderTextColor="#6B7280" secureTextEntry={!verPassword}value={password} onChangeText={setPassword} />
-                        <Pressable onPress={() => setVerPassword(!verPassword)}>
-                        <Ionicons name={verPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF"/>
-                        </Pressable>
-                    </View>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Contraseña" 
+                                            placeholderTextColor="#6B7280" 
+                                            secureTextEntry={!verPassword} 
+                                            value={password} 
+                                            onChangeText={setPassword} 
+                                        />
+                                        <Pressable onPress={() => setVerPassword(!verPassword)}>
+                                            <Ionicons name={verPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF"/>
+                                        </Pressable>
+                                    </View>
 
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
-                        <TextInput style={styles.input} placeholder="Confirmar contraseña" placeholderTextColor="#6B7280" secureTextEntry={!verConfirmPassword} value={confirmPassword} onChangeText={setConfirmPassword} />
-                        <Pressable onPress={() => setVerConfirmPassword(!verConfirmPassword)}>
-                        <Ionicons name={verConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
-                        </Pressable>
-                    </View>
+                                    <View style={styles.inputContainer}>
+                                        <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="Confirmar contraseña" 
+                                            placeholderTextColor="#6B7280" 
+                                            secureTextEntry={!verConfirmPassword} 
+                                            value={confirmPassword} 
+                                            onChangeText={setConfirmPassword} 
+                                        />
+                                        <Pressable onPress={() => setVerConfirmPassword(!verConfirmPassword)}>
+                                            <Ionicons name={verConfirmPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF" />
+                                        </Pressable>
+                                    </View>
 
-                    {/* Botones de navegación */}
-                    <View style={styles.buttonRow}>
-                        <Pressable style={styles.botonAtras} onPress={handleAtras}>
-                        <Ionicons name="arrow-back-outline" size={20} color="#FFFFFF" />
-                        <Text style={styles.textoBotonAtras}>Atrás</Text>
-                        </Pressable>
+                                    {/* Botones de navegación */}
+                                    <View style={styles.buttonRow}>
+                                        <Pressable style={styles.botonAtras} onPress={handleAtras}>
+                                            <Ionicons name="arrow-back-outline" size={20} color="#FFFFFF" />
+                                            <Text style={styles.textoBotonAtras}>Atrás</Text>
+                                        </Pressable>
 
-                        <Pressable style={[styles.botonRegistrar, cargando && styles.botonDisabled]} onPress={handleRegister} disabled={cargando} >
-                        {cargando ? (
-                            <ActivityIndicator color="#FFFFFF" />
-                        ) : (
-                            <>
-                            <Text style={styles.textoBoton}>Registrarse</Text>
-                            <Ionicons name="checkmark-outline" size={20} color="#000000" />
-                            </>
-                        )}
-                        </Pressable>
-                    </View>
-                    </View>
-                )}
+                                        <Pressable 
+                                            style={[styles.botonRegistrar, cargando && styles.botonDisabled]} 
+                                            onPress={handleRegister} 
+                                            disabled={cargando} 
+                                        >
+                                            {cargando ? (
+                                                <ActivityIndicator color="#FFFFFF" />
+                                            ) : (
+                                                <>
+                                                    <Text style={styles.textoBoton}>Registrarse</Text>
+                                                    <Ionicons name="checkmark-outline" size={20} color="#000000" />
+                                                </>
+                                            )}
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            )}
 
-                {/* Separador (solo en paso 2) */}
-                {step === 2 && (
-                    <>
-                    <View style={styles.separator}>
-                        <View style={styles.line} />
-                        <Text style={styles.separatorText}>O regístrate con</Text>
-                        <View style={styles.line} />
-                    </View>
+                            {/* Separador (solo en paso 2) */}
+                            {step === 2 && (
+                                <>
+                                    <View style={styles.separator}>
+                                        <View style={styles.line} />
+                                        <Text style={styles.separatorText}>O regístrate con</Text>
+                                        <View style={styles.line} />
+                                    </View>
 
-                    <Pressable style={styles.googleButton} onPress={handleGoogleRegister} disabled={cargandoGoogle}>
-                        {cargandoGoogle ? (
-                        <ActivityIndicator color="#4285F4" />
-                        ) : (
-                        <>
-                            <Imagen source={require('../../../assets/images/icono_google.png')} style={{ width: 20, height: 20 }} />
-                            <Text style={styles.googleText}>Google</Text>
-                        </>
-                        )}
-                    </Pressable>
-                    </>
-                )}
+                                    <Pressable style={styles.googleButton} onPress={handleGoogleRegister} disabled={cargandoGoogle}>
+                                        {cargandoGoogle ? (
+                                            <ActivityIndicator color="#4285F4" />
+                                        ) : (
+                                            <>
+                                                {/* 
+                                                    <Imagen source={require('../../../assets/images/icono_google.png')} style={{ width: 20, height: 20 }} />
+                                                */}
+                                                <Text style={styles.googleText}>Google</Text>
+                                            </>
+                                        )}
+                                    </Pressable>
+                                </>
+                            )}
 
-                {/* Volver al Login (solo en paso 1) */}
-                {step === 1 && (
-                    <View style={styles.registerContainer}>
-                    <Text style={styles.registerText}>¿Ya tienes una cuenta? </Text>
-                    <Pressable onPress={() => router.replace("/cap-presentation/Views/Login")}>
-                        <Text style={styles.registerLink}>Inicia sesión aquí</Text>
-                    </Pressable>
-                    </View>
-                )}
+                            {/* Volver al Login (solo en paso 1) */}
+                            {step === 1 && (
+                                <View style={styles.registerContainer}>
+                                    <Text style={styles.registerText}>¿Ya tienes una cuenta? </Text>
+                                    <Pressable onPress={() => router.replace("/cap-presentation/Views/Login")}>
+                                        <Text style={styles.registerLink}>Inicia sesión aquí</Text>
+                                    </Pressable>
+                                </View>
+                            )}
 
-                {/* Mensaje de error */}
-                {!!mensaje && (
-                    <View style={styles.errorContainer}>
-                    <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
-                    <Text style={styles.error}>{mensaje}</Text>
-                    </View>
-                )}
-                </ScrollView>
-            </LinearGradient>
-            </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+                            {/* Mensaje de error */}
+                            {!!mensaje && (
+                                <View style={styles.errorContainer}>
+                                    <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
+                                    <Text style={styles.error}>{mensaje}</Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    </LinearGradient>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
 
-        {/* Modal de selección de fecha */}
-    {showDatePicker && (
-    <DateTimePicker value={fecha} mode="date" display="spinner" themeVariant="dark" onChange={(event, selectedDate) => { setShowDatePicker(false);
-        if (selectedDate) {
-            setFecha(selectedDate);
-
-            const dia = selectedDate .getDate() .toString() .padStart(2, "0");
-            const mes = (selectedDate.getMonth() + 1) .toString() .padStart(2, "0"); 
-            const año = selectedDate.getFullYear();
-            setFechaTexto(`${dia}/${mes}/${año}`);
-        }
-        }}
-    />
-    )}
+            {/* Modal de selección de fecha */}
+            {showDatePicker && (
+                <DateTimePicker 
+                    value={fecha} 
+                    mode="date" 
+                    display="spinner" 
+                    themeVariant="dark" 
+                    onChange={(event, selectedDate) => { 
+                        setShowDatePicker(false);
+                        if (selectedDate) {
+                            setFecha(selectedDate);
+                            const dia = selectedDate.getDate().toString().padStart(2, "0");
+                            const mes = (selectedDate.getMonth() + 1).toString().padStart(2, "0"); 
+                            const año = selectedDate.getFullYear();
+                            setFechaTexto(`${dia}/${mes}/${año}`);
+                        }
+                    }}
+                />
+            )}
         </SafeAreaView>
     );
-    }
+}
 
-    const styles = StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#000",
@@ -543,4 +657,4 @@ import {auth,db} from "../../firebase/firebase";
         fontSize: 13,
         fontWeight: "500",
     },
-    });
+});

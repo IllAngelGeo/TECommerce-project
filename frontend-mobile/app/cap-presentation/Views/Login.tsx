@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { GoogleAuthProvider,signInWithCredential,} from "firebase/auth";
-
+import { sendPasswordResetEmail } from "firebase/auth";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -23,7 +23,6 @@ export default function DevolverLogin() {
   const [cargando, setCargando] = useState(false);
   const [cargandoGoogle, setCargandoGoogle] = useState(false);
   const [mensaje, setMensaje] = useState("");
-
 
 
   const [request, response, promptAsync] =
@@ -152,13 +151,32 @@ const handleGoogleLogin = async () => {
   }
 };
 
-const handleForgotPassword = () => {
+const handleForgotPassword = async () => {
+  if (!usuario) {
+    setMensaje("Ingresa tu correo primero");
+    return;
+  }
+
+  try {
+    setMensaje("");
+
+    await sendPasswordResetEmail(auth, usuario);
+
     Alert.alert(
-      "Recuperar contraseña",
-      "Se enviará un enlace a tu correo electrónico",
-      [{ text: "OK", onPress: () => console.log("OK Pressed") }]
+      "Correo enviado",
+      "Revisa tu bandeja para restablecer tu contraseña"
     );
-  };
+
+  } catch (error: any) {
+    console.log(error);
+
+    if (error.code === "auth/user-not-found") {
+      setMensaje("No existe una cuenta con ese correo");
+    } else {
+      setMensaje("Error al enviar el correo");
+    }
+  }
+};
 
   return (
     <KeyboardAvoidingView
@@ -171,17 +189,12 @@ const handleForgotPassword = () => {
           style={styles.container}
         >
           <View style={styles.content}>
-            {/* Logo */}
             <View style={styles.logoContainer}>
               <View style={styles.logoWrapper}>
-                <Imagen
-                  width={80}
-                  height={80}
-                  source={require("../../../assets/images/logo_ecommerce.png")}
-                />
+              <Imagen source={{uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782204337/logo_tecommerce_rzx7yp.png"}}style={{ width: 80, height: 80 }}/>
+       
               </View>
             </View>
-
             <Text style={styles.titulo}>TeCommerce</Text>
             <Text style={styles.subtitulo}>
               Iniciar sesión
@@ -190,33 +203,14 @@ const handleForgotPassword = () => {
             {/* Campos de entrada */}
             <View style={styles.inputContainer}>
               <Ionicons name="person-outline" size={20} color="#9CA3AF" />
-              <TextInput
-                style={styles.input}
-                placeholder="Usuario o correo electrónico"
-                placeholderTextColor="#6B7280"
-                value={usuario}
-                onChangeText={setUsuario}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              <TextInput style={styles.input} placeholder="Usuario o correo electrónico" placeholderTextColor="#6B7280" value={usuario} onChangeText={setUsuario} autoCapitalize="none" autoCorrect={false} />
             </View>
 
             <View style={styles.inputContainer}>
               <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
-              <TextInput
-                style={styles.input}
-                placeholder="Contraseña"
-                placeholderTextColor="#6B7280"
-                secureTextEntry={!verPassword}
-                value={password}
-                onChangeText={setPassword}
-              />
+              <TextInput style={styles.input} placeholder="Contraseña" placeholderTextColor="#6B7280" secureTextEntry={!verPassword} value={password} onChangeText={setPassword} />
               <Pressable onPress={() => setVerPassword(!verPassword)}>
-                <Ionicons
-                  name={verPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color="#9CA3AF"
-                />
+                <Ionicons name={verPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#9CA3AF"/>
               </Pressable>
             </View>
 
@@ -226,11 +220,7 @@ const handleForgotPassword = () => {
             </Pressable>
 
             {/* Botón Iniciar Sesión */}
-            <Pressable
-              style={[styles.boton, cargando && styles.botonDisabled]}
-              onPress={handleLogin}
-              disabled={cargando}
-            >
+            <Pressable style={[styles.boton, cargando && styles.botonDisabled]} onPress={handleLogin} disabled={cargando}>
               {cargando ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
@@ -255,7 +245,7 @@ const handleForgotPassword = () => {
     <ActivityIndicator color="#4285F4" />
   ) : (
     <>
-      <Imagen source={require('../../../assets/images/icono_google.png')} style={{ width: 20, height: 20 }} />
+     <Imagen source={{uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782204067/icono_google_uktsac.png",}}style={{ width: 20, height: 20 }}/>
       <Text style={styles.googleText}>Continuar con Google</Text>
     </>
   )}

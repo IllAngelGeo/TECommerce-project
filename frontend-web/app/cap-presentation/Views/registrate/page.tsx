@@ -14,6 +14,7 @@ export default function RegistroPage() {
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [fechaTexto, setFechaTexto] = useState("");
+  const [telefono, setTelefono] = useState(""); // NUEVO: estado para teléfono
   
   // Paso 2 - Datos de cuenta
   const [email, setEmail] = useState("");
@@ -27,10 +28,18 @@ export default function RegistroPage() {
   const [mensaje, setMensaje] = useState("");
 
   const validarPaso1 = () => {
-    if (!nombre || !apellidoPaterno || !apellidoMaterno || !fechaTexto) {
+    if (!nombre || !apellidoPaterno || !apellidoMaterno || !fechaTexto || !telefono) {
       setMensaje("Completa todos los campos");
       return false;
     }
+
+    // Validar teléfono (mínimo 10 dígitos)
+    const telefonoLimpio = telefono.replace(/\D/g, '');
+    if (telefonoLimpio.length < 10) {
+      setMensaje("Ingresa un número de teléfono válido (mínimo 10 dígitos)");
+      return false;
+    }
+
     setMensaje("");
     return true;
   };
@@ -87,6 +96,9 @@ export default function RegistroPage() {
       console.log("2. Usuario creado en Firebase:", firebaseUser.uid);
       console.log("3. Enviando datos al backend...");
 
+      // Limpiar el teléfono (solo dígitos)
+      const telefonoLimpio = telefono.replace(/\D/g, '');
+
       // 2. Enviar a backend Go
       const payload = {
         id_firebase: firebaseUser.uid,
@@ -95,7 +107,7 @@ export default function RegistroPage() {
         apellido_paterno: apellidoPaterno,
         apellido_materno: apellidoMaterno,
         fecha_nacimiento: fechaTexto,
-        telefono: "5555555555",
+        telefono: telefonoLimpio, // Usar el teléfono del estado
         provider: "firebase",
       };
 
@@ -156,6 +168,9 @@ export default function RegistroPage() {
       
       console.log("Usuario Google:", user);
       
+      // Limpiar el teléfono (solo dígitos)
+      const telefonoLimpio = telefono.replace(/\D/g, '');
+      
       // También registrar en backend
       const payload = {
         id_firebase: user.uid,
@@ -164,6 +179,7 @@ export default function RegistroPage() {
         apellido_paterno: apellidoPaterno || "",
         apellido_materno: apellidoMaterno || "",
         fecha_nacimiento: fechaTexto || "",
+        telefono: telefonoLimpio || "5555555555", // Usar el teléfono del estado o valor por defecto
         provider: "google",
       };
 
@@ -187,6 +203,29 @@ export default function RegistroPage() {
     } finally {
       setIsGoogleLoading(false);
     }
+  };
+
+  // Función para formatear el teléfono mientras se escribe
+  const formatearTelefono = (valor: string) => {
+    // Solo permitir dígitos
+    const soloDigitos = valor.replace(/\D/g, '');
+    
+    // Limitar a 10 dígitos
+    const limitado = soloDigitos.slice(0, 10);
+    
+    // Formatear como (XXX) XXX-XXXX
+    if (limitado.length <= 3) {
+      return limitado;
+    } else if (limitado.length <= 6) {
+      return `(${limitado.slice(0, 3)}) ${limitado.slice(3)}`;
+    } else {
+      return `(${limitado.slice(0, 3)}) ${limitado.slice(3, 6)}-${limitado.slice(6, 10)}`;
+    }
+  };
+
+  const handleTelefonoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valorFormateado = formatearTelefono(e.target.value);
+    setTelefono(valorFormateado);
   };
 
   const ProgressIndicator = () => (
@@ -275,19 +314,34 @@ export default function RegistroPage() {
                   />
                 </div>
 
+               {/* Fecha de nacimiento CON LABEL Y MÁS ESPACIO */}
+<div className="space-y-2 mb-6">
+  <label className="text-white/80 text-sm font-medium flex items-center gap-2">
+    Fecha de nacimiento
+  </label>
+  <div className="relative">
+    <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+    <input type="date" value={fechaTexto} onChange={(e) => setFechaTexto(e.target.value)} placeholder="Fecha de nacimiento" className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500 [color-scheme:dark]" />
+  </div>
+</div>
+
+                {/* NUEVO: Campo de teléfono */}
                 <div className="relative">
                   <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                   <input 
-                    type="date" 
-                    value={fechaTexto} 
-                    onChange={(e) => setFechaTexto(e.target.value)} 
-                    placeholder="Fecha de nacimiento" 
-                    className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500 [color-scheme:dark]" 
+                    type="tel" 
+                    value={telefono} 
+                    onChange={handleTelefonoChange} 
+                    placeholder="Teléfono (10 dígitos)" 
+                    className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" 
+                    maxLength={14} // (XXX) XXX-XXXX
                   />
                 </div>
 
