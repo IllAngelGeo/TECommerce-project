@@ -47,7 +47,7 @@ func main() {
 	log.Println("Servidor corriendo en http://localhost:8080")
 
 	// Levantar servidor (y capturar error)
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run("0.0.0.0:8080"); err != nil {
 		log.Fatal("❌ Error al iniciar servidor:", err)
 	}
 }
