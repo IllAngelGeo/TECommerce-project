@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 
+	categoriasControllers "ecommerce-backend/internal/categorias/controller"
 	productosControllers "ecommerce-backend/internal/productos/controllers"
 	usuariosControllers "ecommerce-backend/internal/usuarios/controllers"
 )
@@ -12,6 +13,11 @@ func SetupRoutes(r *gin.Engine) {
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", usuariosControllers.Register)
+	}
+
+	categorias := r.Group("/categorias")
+	{
+		categorias.GET("", categoriasControllers.GetCategories)
 	}
 
 	productos := r.Group("/productos")

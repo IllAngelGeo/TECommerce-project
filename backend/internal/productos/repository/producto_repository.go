@@ -6,27 +6,45 @@ import (
 )
 
 // CREAR PRODUCTO
+// CREAR PRODUCTO
 func CreateProduct(product *models.Producto) error {
 
-	query := `
-		INSERT INTO productos
-		(
-			id_categoria,
-			id_marca,
-			nombre,
-			descripcion,
-			modelo,
-			precio,
-			precio_oferta,
-			activo,
-			destacado
-		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-		RETURNING id_producto
+	tx, err := database.DB.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	// Si ocurre cualquier error, hacemos rollback
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// =========================
+	// CREAR PRODUCTO
+	// =========================
+
+	productQuery := `
+	INSERT INTO productos
+	(
+		id_categoria,
+		id_marca,
+		nombre,
+		descripcion,
+		modelo,
+		precio,
+		precio_oferta,
+		activo,
+		destacado
+	)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+	RETURNING id_producto
 	`
 
-	err := database.DB.QueryRow(
-		query,
+	err = tx.QueryRow(
+		productQuery,
 		product.IDCategoria,
 		product.IDMarca,
 		product.Nombre,
@@ -42,42 +60,49 @@ func CreateProduct(product *models.Producto) error {
 		return err
 	}
 
-	// Crear inventario automáticamente
+	// =========================
+	// CREAR INVENTARIO
+	// =========================
+
 	inventoryQuery := `
-		INSERT INTO inventario
-		(id_producto, stock, stock_minimo)
-		VALUES ($1, $2, $3)
+	INSERT INTO inventario
+	(
+		id_producto,
+		stock,
+		stock_minimo
+	)
+	VALUES ($1, $2, $3)
 	`
 
-	_, err = database.DB.Exec(
+	_, err = tx.Exec(
 		inventoryQuery,
 		product.IDProducto,
 		product.Stock,
 		product.StockMinimo,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	// =========================
+	// CONFIRMAR TRANSACCIÓN
+	// =========================
+
+	err = tx.Commit()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // OBTENER TODOS LOS PRODUCTOS
+// OBTENER TODOS LOS PRODUCTOS
 func GetAllProducts() ([]models.Producto, error) {
 
-	query := `
-		SELECT
-			id_producto,
-			id_categoria,
-			id_marca,
-			nombre,
-			descripcion,
-			modelo,
-			precio,
-			precio_oferta,
-			activo,
-			destacado
-		FROM productos
-		ORDER BY fecha_creacion DESC
-	`
-
+	query := `SELECT p.id_producto, p.id_categoria, p.id_marca, p.nombre, p.descripcion, p.modelo, p.precio, p.precio_oferta, p.activo, p.destacado, COALESCE( ( SELECT pi.imagen_url FROM producto_imagenes pi WHERE pi.id_producto = p.id_producto AND pi.principal = true LIMIT 1),  '' ) AS imagen FROM productos p WHERE p.activo = true ORDER BY p.fecha_creacion DESC`
 	rows, err := database.DB.Query(query)
 
 	if err != nil {
@@ -86,7 +111,7 @@ func GetAllProducts() ([]models.Producto, error) {
 
 	defer rows.Close()
 
-	var products []models.Producto
+	products := make([]models.Producto, 0)
 
 	for rows.Next() {
 
@@ -103,6 +128,7 @@ func GetAllProducts() ([]models.Producto, error) {
 			&product.PrecioOferta,
 			&product.Activo,
 			&product.Destacado,
+			&product.Imagen,
 		)
 
 		if err != nil {
@@ -112,6 +138,11 @@ func GetAllProducts() ([]models.Producto, error) {
 		products = append(products, product)
 	}
 
+	// Verificar si ocurrió un error durante la lectura
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return products, nil
 }
 
@@ -119,20 +150,30 @@ func GetAllProducts() ([]models.Producto, error) {
 func GetProductByID(id string) (*models.Producto, error) {
 
 	query := `
-		SELECT
-			id_producto,
-			id_categoria,
-			id_marca,
-			nombre,
-			descripcion,
-			modelo,
-			precio,
-			precio_oferta,
-			activo,
-			destacado
-		FROM productos
-		WHERE id_producto = $1
-	`
+	SELECT
+		p.id_producto,
+		p.id_categoria,
+		p.id_marca,
+		p.nombre,
+		p.descripcion,
+		p.modelo,
+		p.precio,
+		p.precio_oferta,
+		p.activo,
+		p.destacado,
+		COALESCE(
+			(
+				SELECT pi.imagen_url
+				FROM producto_imagenes pi
+				WHERE pi.id_producto = p.id_producto
+				AND pi.principal = true
+				LIMIT 1
+			),
+			''
+		) AS imagen
+	FROM productos p
+	WHERE p.id_producto = $1
+`
 
 	var product models.Producto
 
@@ -150,6 +191,7 @@ func GetProductByID(id string) (*models.Producto, error) {
 		&product.PrecioOferta,
 		&product.Activo,
 		&product.Destacado,
+		&product.Imagen,
 	)
 
 	if err != nil {
@@ -157,26 +199,27 @@ func GetProductByID(id string) (*models.Producto, error) {
 	}
 
 	return &product, nil
+
 }
 
 // ACTUALIZAR PRODUCTO
 func UpdateProduct(id string, product *models.Producto) error {
 
 	query := `
-		UPDATE productos
-		SET
-			id_categoria = $1,
-			id_marca = $2,
-			nombre = $3,
-			descripcion = $4,
-			modelo = $5,
-			precio = $6,
-			precio_oferta = $7,
-			activo = $8,
-			destacado = $9,
-			fecha_actualizacion = now()
-		WHERE id_producto = $10
-	`
+	UPDATE productos
+	SET
+		id_categoria = $1,
+		id_marca = $2,
+		nombre = $3,
+		descripcion = $4,
+		modelo = $5,
+		precio = $6,
+		precio_oferta = $7,
+		activo = $8,
+		destacado = $9,
+		fecha_actualizacion = now()
+	WHERE id_producto = $10
+`
 
 	_, err := database.DB.Exec(
 		query,
@@ -198,13 +241,13 @@ func UpdateProduct(id string, product *models.Producto) error {
 
 	// Actualizar inventario
 	inventoryQuery := `
-		UPDATE inventario
-		SET
-			stock = $1,
-			stock_minimo = $2,
-			fecha_actualizacion = now()
-		WHERE id_producto = $3
-	`
+	UPDATE inventario
+	SET
+		stock = $1,
+		stock_minimo = $2,
+		fecha_actualizacion = now()
+	WHERE id_producto = $3
+`
 
 	_, err = database.DB.Exec(
 		inventoryQuery,
@@ -214,15 +257,16 @@ func UpdateProduct(id string, product *models.Producto) error {
 	)
 
 	return err
+
 }
 
 // ELIMINAR PRODUCTO
 func DeleteProduct(id string) error {
 
 	query := `
-		DELETE FROM productos
-		WHERE id_producto = $1
-	`
+	DELETE FROM productos
+	WHERE id_producto = $1
+`
 
 	_, err := database.DB.Exec(
 		query,
@@ -230,4 +274,5 @@ func DeleteProduct(id string) error {
 	)
 
 	return err
+
 }

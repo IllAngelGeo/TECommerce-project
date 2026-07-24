@@ -8,8 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { createUserWithEmailAndPassword } from "firebase/auth"; 
-import {doc,setDoc,serverTimestamp} from "firebase/firestore";
-import {auth,db} from "../../firebase/firebase";
+import { auth } from "../../firebase/firebase";
+
 
 export default function DevolverRegistro() {
 
@@ -114,18 +114,19 @@ export default function DevolverRegistro() {
         setMensaje("");
     };
 
-   const handleRegister = async () => {
+const handleRegister = async () => {
   if (!validarPaso2()) return;
 
   try {
     setCargando(true);
+    setMensaje("");
 
     const telefonoLimpio = telefono.replace(/\D/g, "");
 
-    // 1. CREAR USUARIO EN FIREBASE PRIMERO
+    // 1. Crear usuario en Firebase Authentication
     const credencial = await createUserWithEmailAndPassword(
       auth,
-      email,
+      email.trim(),
       password
     );
 
@@ -133,51 +134,73 @@ export default function DevolverRegistro() {
 
     console.log("UID FIREBASE:", uid);
 
-    // 2. AHORA SÍ LLAMAR A GO CON EL UID
-    const response = await fetch("http://192.168.0.86:8080/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id_firebase: uid,
-        email: email.trim(),
-        nombre: nombre.trim(),
-        apellido_paterno: apellidoPaterno.trim(),
-        apellido_materno: apellidoMaterno.trim(),
-        telefono: telefonoLimpio,
-        provider: "email",
-      }),
-    });
+    // 2. Enviar información a Go
+    const response = await fetch(
+      "http://192.168.0.86:8080/auth/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_firebase: uid,
+          email: email.trim(),
+          nombre: nombre.trim(),
+          apellido_paterno: apellidoPaterno.trim(),
+          apellido_materno: apellidoMaterno.trim(),
+          telefono: telefonoLimpio,
+          provider: "email",
+        }),
+      }
+    );
 
     const data = await response.json();
+
     console.log("RESPUESTA GO:", data);
 
     if (!response.ok) {
-      setMensaje(data.error || "Error en backend");
+      setMensaje(
+        data.error ||
+        data.message ||
+        "Error al registrar usuario en el servidor"
+      );
       return;
     }
 
-    // 3. FIRESTORE (opcional pero recomendado)
-    await setDoc(doc(db, "users", uid), {
-      idFirebase: uid,
-      email,
-      nombre,
-      apellidoPaterno,
-      apellidoMaterno,
-      telefono: telefonoLimpio,
-      provider: "email",
-      createdAt: serverTimestamp(),
-    });
+    // 3. Registro terminado correctamente
+    console.log("REGISTRO COMPLETADO");
 
     router.replace("/cap-presentation/Views/Login");
-  } catch (error) {
+
+  } catch (error: any) {
     console.log("ERROR REGISTER:", error);
-    setMensaje("Error de conexión");
+
+    // Si Firebase ya tiene ese correo
+    if (error.code === "auth/email-already-in-use") {
+      setMensaje(
+        "Este correo ya está registrado. Intenta iniciar sesión."
+      );
+      return;
+    }
+
+    // Error de conexión con Go
+    if (error.message === "Network request failed") {
+      setMensaje(
+        "No se pudo conectar con el servidor."
+      );
+      return;
+    }
+
+    setMensaje(
+      error.message ||
+      "Ocurrió un error durante el registro"
+    );
+
   } finally {
     setCargando(false);
   }
 };
+
     const handleGoogleRegister = () => {
         setCargandoGoogle(true);
         setMensaje("");

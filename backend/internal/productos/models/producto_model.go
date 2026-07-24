@@ -17,4 +17,6 @@ type Producto struct {
 
 	Stock       int `json:"stock"`
 	StockMinimo int `json:"stock_minimo"`
+
+	Imagen string `json:"imagen"`
 }

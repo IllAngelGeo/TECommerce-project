@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,7 +9,6 @@ import (
 	"ecommerce-backend/internal/productos/models"
 	"ecommerce-backend/internal/productos/service"
 )
-
 
 func CreateProduct(c *gin.Context) {
 
@@ -35,7 +35,7 @@ func CreateProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "producto creado correctamente",
+		"message":  "producto creado correctamente",
 		"producto": product,
 	})
 }
@@ -45,6 +45,8 @@ func GetProducts(c *gin.Context) {
 	products, err := service.GetProducts()
 
 	if err != nil {
+
+		fmt.Println("ERROR REAL AL OBTENER PRODUCTOS:", err)
 
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -124,4 +126,3 @@ func DeleteProduct(c *gin.Context) {
 		"message": "producto eliminado correctamente",
 	})
 }
-

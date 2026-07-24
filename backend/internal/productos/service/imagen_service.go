@@ -45,7 +45,7 @@ func UploadProductImage(
 		IDProducto: productID,
 		ImagenURL:  result.SecureURL,
 		Orden:      0,
-		Principal:  false,
+		Principal:  true,
 	}
 
 	err = repository.CreateProductImage(image)
