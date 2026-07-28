@@ -11,9 +11,13 @@ import { router } from "expo-router";
 interface MenuLateralProps {
   visible: boolean;
   onClose: () => void;
-  seccionActual: "inicio" | "productos" | "categorias";
+  seccionActual:
+    | "dashboard"
+    | "productos"
+    | "categorias"
+    | "marcas"
+    | "inventario";
 }
-
 
 export default function MenuLateral({
   visible,
@@ -30,76 +34,70 @@ export default function MenuLateral({
     router.push(ruta as any);
   };
 
-  return (
-    <View style={estilos.menuOverlay}>
+return (
+  <View style={estilos.menuOverlay}>
 
-      {/* FONDO OSCURO */}
-      <Pressable
-        style={estilos.menuFondo}
-        onPress={onClose}
-      />
+    {/* PANEL DEL MENÚ - IZQUIERDA */}
+    <View style={estilos.menuPanel}>
 
-      {/* PANEL DEL MENÚ */}
-      <View style={estilos.menuPanel}>
+      {/* HEADER */}
+      <View style={estilos.menuHeader}>
 
-        {/* HEADER */}
-        <View style={estilos.menuHeader}>
+        <View style={estilos.menuLogoContainer}>
 
-          <View style={estilos.menuLogoContainer}>
-
-            <View style={estilos.menuLogo}>
-              <Text style={estilos.menuLogoText}>
-                T
-              </Text>
-            </View>
-
-            <View>
-              <Text style={estilos.menuTitulo}>
-                TeCommerce
-              </Text>
-
-              <Text style={estilos.menuSubtitulo}>
-                Tu tienda tecnológica
-              </Text>
-            </View>
-
+          <View style={estilos.menuLogo}>
+            <Text style={estilos.menuLogoText}>
+              T
+            </Text>
           </View>
 
-          <Pressable
-            style={estilos.menuCerrar}
-            onPress={onClose}
-          >
-            <Ionicons
-              name="close"
-              size={24}
-              color="#FFFFFF"
-            />
-          </Pressable>
+          <View>
+            <Text style={estilos.menuTitulo}>
+              TeCommerce
+            </Text>
+
+            <Text style={estilos.menuSubtitulo}>
+              Panel de administración
+            </Text>
+          </View>
 
         </View>
 
-        {/* SEPARADOR */}
-        <View style={estilos.menuSeparador} />
+        <Pressable
+          style={estilos.menuCerrar}
+          onPress={onClose}
+        >
+          <Ionicons
+            name="close"
+            size={24}
+            color="#FFFFFF"
+          />
+        </Pressable>
 
-        {/* OPCIONES */}
-        <View style={estilos.menuOpciones}>
+      </View>
 
-          {/* INICIO */}
-       <Pressable
+      {/* SEPARADOR */}
+      <View style={estilos.menuSeparador} />
+
+      {/* OPCIONES */}
+      <View style={estilos.menuOpciones}>
+
+        {/* DASHBOARD */}
+        {/* DASHBOARD */}
+<Pressable
   style={[
     estilos.menuItem,
-    seccionActual === "inicio" &&
-      estilos.menuItemActivo,
+    seccionActual === "dashboard" && estilos.menuItemActivo,
   ]}
   onPress={() =>
-    navegar("/cap-presentation/Views/Home")
+    navegar("/cap-presentation/Views/AdminHome")
   }
 >
   <Ionicons
-    name="home-outline"
+    name="grid-outline"
     size={23}
     color={
-      seccionActual === "inicio"
+      seccionActual === "dashboard"
         ? "#000000"
         : "#FFFFFF"
     }
@@ -108,33 +106,34 @@ export default function MenuLateral({
   <Text
     style={[
       estilos.menuItemText,
-      seccionActual === "inicio" &&
+      seccionActual === "dashboard" &&
         estilos.menuItemTextActivo,
     ]}
   >
-    Inicio
+    Dashboard
   </Text>
 
   <Ionicons
     name="chevron-forward"
     size={18}
     color={
-      seccionActual === "inicio"
+      seccionActual === "dashboard"
         ? "#000000"
         : "#555555"
     }
   />
 </Pressable>
 
-          {/* PRODUCTOS */}
-  <Pressable
+
+{/* PRODUCTOS */}
+<Pressable
   style={[
     estilos.menuItem,
     seccionActual === "productos" &&
       estilos.menuItemActivo,
   ]}
   onPress={() =>
-    navegar("/cap-presentation/Views/Productos")
+    navegar("/cap-presentation/Views/CrudProducto")
   }
 >
   <Ionicons
@@ -169,6 +168,7 @@ export default function MenuLateral({
 </Pressable>
 
 
+{/* CATEGORÍAS */}
 <Pressable
   style={[
     estilos.menuItem,
@@ -180,7 +180,7 @@ export default function MenuLateral({
   }
 >
   <Ionicons
-    name="grid-outline"
+    name="layers-outline"
     size={23}
     color={
       seccionActual === "categorias"
@@ -210,53 +210,76 @@ export default function MenuLateral({
   />
 </Pressable>
 
+        {/* MARCAS */}
 
-        </View>
+<Pressable style={[ estilos.menuItem, seccionActual === "marcas" && estilos.menuItemActivo, ]}
+  onPress={() => ("/cap-presentation/Views/Categorias") } >
+  <Ionicons name="airplane" size={23} color={ seccionActual === "marcas" ? "#000000" : "#FFFFFF" }/>
+  <Text style={[ estilos.menuItemText, seccionActual === "marcas" && estilos.menuItemTextActivo, ]}> Marcas </Text>
+  <Ionicons name="chevron-forward" size={18} color={ seccionActual === "marcas" ? "#000000" : "#555555" }/>
+</Pressable>
 
-        {/* PARTE INFERIOR */}
-        <View style={estilos.menuBottom}>
+        {/* Banners */}
+<Pressable style={[ estilos.menuItem, seccionActual === "marcas" && estilos.menuItemActivo, ]}
+  onPress={() => ("/cap-presentation/Views/Categorias") } >
+  <Ionicons name="airplane" size={23} color={ seccionActual === "marcas" ? "#000000" : "#FFFFFF" }/>
+  <Text style={[ estilos.menuItemText, seccionActual === "marcas" && estilos.menuItemTextActivo, ]}> Banners </Text>
+  <Ionicons name="chevron-forward" size={18} color={ seccionActual === "marcas" ? "#000000" : "#555555" }/>
+</Pressable>
 
-          <Pressable
-            style={estilos.logoutButton}
-            onPress={() => {
-              onClose();
-              console.log("Cerrar sesión");
-            }}
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={23}
-              color="#FFFFFF"
-            />
+      </View>
 
-            <Text style={estilos.logoutText}>
-              Cerrar sesión
-            </Text>
-          </Pressable>
+      {/* PARTE INFERIOR */}
+      <View style={estilos.menuBottom}>
 
-          <Text style={estilos.versionText}>
-            TeCommerce v1.0.0
+        <Pressable
+          style={estilos.logoutButton}
+          onPress={() => {
+            onClose();
+            router.replace(
+              "/cap-presentation/Views/Login"
+            );
+          }}
+        >
+          <Ionicons
+            name="log-out-outline"
+            size={23}
+            color="#FFFFFF"
+          />
+
+          <Text style={estilos.logoutText}>
+            Cerrar sesión
           </Text>
+        </Pressable>
 
-        </View>
+        <Text style={estilos.versionText}>
+          TeCommerce Admin v1.0.0
+        </Text>
 
       </View>
 
     </View>
-  );
-}
+
+    {/* FONDO OSCURO - DERECHA */}
+    <Pressable
+      style={estilos.menuFondo}
+      onPress={onClose}
+    />
+
+  </View>
+);}
 
 const estilos = StyleSheet.create({
 
-  menuOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 100,
-    flexDirection: "row",
-  },
+menuOverlay: {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 100,
+  flexDirection: "row",
+},
 
   menuFondo: {
     flex: 1,
@@ -344,13 +367,13 @@ const estilos = StyleSheet.create({
   },
 
   menuItemActivo: {
-  backgroundColor: "#FFFFFF",
-},
+    backgroundColor: "#FFFFFF",
+  },
 
-menuItemTextActivo: {
-  color: "#000000",
-  fontWeight: "bold",
-},
+  menuItemTextActivo: {
+    color: "#000000",
+    fontWeight: "bold",
+  },
 
   menuItemText: {
     flex: 1,

@@ -99,10 +99,49 @@ func CreateProduct(product *models.Producto) error {
 }
 
 // OBTENER TODOS LOS PRODUCTOS
+
 // OBTENER TODOS LOS PRODUCTOS
 func GetAllProducts() ([]models.Producto, error) {
 
-	query := `SELECT p.id_producto, p.id_categoria, p.id_marca, p.nombre, p.descripcion, p.modelo, p.precio, p.precio_oferta, p.activo, p.destacado, COALESCE( ( SELECT pi.imagen_url FROM producto_imagenes pi WHERE pi.id_producto = p.id_producto AND pi.principal = true LIMIT 1),  '' ) AS imagen FROM productos p WHERE p.activo = true ORDER BY p.fecha_creacion DESC`
+	query := `
+	SELECT
+		p.id_producto,
+		p.id_categoria,
+		p.id_marca,
+		p.nombre,
+		p.descripcion,
+		p.modelo,
+		p.precio,
+		p.precio_oferta,
+		p.activo,
+		p.destacado,
+
+		-- IMAGEN PRINCIPAL
+		COALESCE(
+			(
+				SELECT pi.imagen_url
+				FROM producto_imagenes pi
+				WHERE pi.id_producto = p.id_producto
+				AND pi.principal = true
+				LIMIT 1
+			),
+			''
+		) AS imagen,
+
+		-- INVENTARIO
+		COALESCE(i.stock, 0) AS stock,
+		COALESCE(i.stock_minimo, 0) AS stock_minimo
+
+	FROM productos p
+
+	LEFT JOIN inventario i
+		ON i.id_producto = p.id_producto
+
+	WHERE p.activo = true
+
+	ORDER BY p.fecha_creacion DESC
+	`
+
 	rows, err := database.DB.Query(query)
 
 	if err != nil {
@@ -129,6 +168,10 @@ func GetAllProducts() ([]models.Producto, error) {
 			&product.Activo,
 			&product.Destacado,
 			&product.Imagen,
+
+			// INVENTARIO
+			&product.Stock,
+			&product.StockMinimo,
 		)
 
 		if err != nil {
@@ -138,7 +181,6 @@ func GetAllProducts() ([]models.Producto, error) {
 		products = append(products, product)
 	}
 
-	// Verificar si ocurrió un error durante la lectura
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -161,6 +203,11 @@ func GetProductByID(id string) (*models.Producto, error) {
 		p.precio_oferta,
 		p.activo,
 		p.destacado,
+
+		-- NOMBRE DE LA CATEGORÍA
+		c.nombre AS categoria,
+
+		-- IMAGEN PRINCIPAL
 		COALESCE(
 			(
 				SELECT pi.imagen_url
@@ -170,10 +217,22 @@ func GetProductByID(id string) (*models.Producto, error) {
 				LIMIT 1
 			),
 			''
-		) AS imagen
+		) AS imagen,
+
+		-- INVENTARIO
+		COALESCE(i.stock, 0) AS stock,
+		COALESCE(i.stock_minimo, 0) AS stock_minimo
+
 	FROM productos p
+
+	LEFT JOIN categorias c
+		ON c.id_categoria = p.id_categoria
+
+	LEFT JOIN inventario i
+		ON i.id_producto = p.id_producto
+
 	WHERE p.id_producto = $1
-`
+	`
 
 	var product models.Producto
 
@@ -191,7 +250,16 @@ func GetProductByID(id string) (*models.Producto, error) {
 		&product.PrecioOferta,
 		&product.Activo,
 		&product.Destacado,
+
+		// CATEGORÍA
+		&product.Categoria,
+
+		// IMAGEN
 		&product.Imagen,
+
+		// INVENTARIO
+		&product.Stock,
+		&product.StockMinimo,
 	)
 
 	if err != nil {
@@ -199,7 +267,6 @@ func GetProductByID(id string) (*models.Producto, error) {
 	}
 
 	return &product, nil
-
 }
 
 // ACTUALIZAR PRODUCTO

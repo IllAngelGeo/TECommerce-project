@@ -12,6 +12,8 @@ import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { GoogleAuthProvider,signInWithCredential,} from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { API_URL } from "../constants/api_url";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -88,8 +90,8 @@ const idToken =
   autenticarGoogle();
 
 }, [response]);
- const handleLogin = async () => {
 
+const handleLogin = async () => {
   setMensaje("");
 
   if (!usuario || !password) {
@@ -98,16 +100,49 @@ const idToken =
   }
 
   try {
-
     setCargando(true);
 
-    await signInWithEmailAndPassword(
+    // Iniciar sesión en Firebase
+    const userCredential = await signInWithEmailAndPassword(
       auth,
       usuario,
       password
     );
 
-    router.replace("/cap-presentation/Views/Home");
+    // Obtener ID de Firebase
+    const firebaseId = userCredential.user.uid;
+
+    console.log("Firebase ID:", firebaseId);
+
+    // Consultar usuario en nuestro backend
+    const response = await fetch(
+      `${API_URL}/usuarios/firebase/${firebaseId}`
+    );
+
+    const data = await response.json();
+
+    await AsyncStorage.setItem( "nombreUsuario", data.nombre );
+    console.log("Usuario:", data);
+
+    if (!response.ok) {
+      setMensaje(data.error || "No se pudo obtener el usuario");
+      return;
+    }
+
+    // Revisar el rol
+    if (data.rol === "admin") {
+
+      router.replace(
+        "/cap-presentation/Views/AdminHome"
+      );
+
+    } else {
+
+      router.replace(
+        "/cap-presentation/Views/Home"
+      );
+
+    }
 
   } catch (error: any) {
 
@@ -115,14 +150,13 @@ const idToken =
 
     if (error.code === "auth/user-not-found") {
       setMensaje("Usuario no encontrado");
-    } else if (
-      error.code === "auth/wrong-password"
-    ) {
+
+    } else if (error.code === "auth/wrong-password") {
       setMensaje("Contraseña incorrecta");
-    } else if (
-      error.code === "auth/invalid-credential"
-    ) {
+
+    } else if (error.code === "auth/invalid-credential") {
       setMensaje("Credenciales inválidas");
+
     } else {
       setMensaje("Error al iniciar sesión");
     }

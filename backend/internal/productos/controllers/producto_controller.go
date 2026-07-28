@@ -126,3 +126,5 @@ func DeleteProduct(c *gin.Context) {
 		"message": "producto eliminado correctamente",
 	})
 }
+
+

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 var DB *sql.DB
@@ -29,32 +29,21 @@ func Connect() {
 		log.Fatalf("Error configurando DB: %v", err)
 	}
 
+	// Usar protocolo simple para evitar conflictos
+	// con prepared statements / stmtcache
 	config.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
-	// Crear connection string
-	connString := config.ConnString()
-
-	// Abrir pool
-	DB, err = sql.Open("pgx", connString)
-
-	if err != nil {
-		log.Fatalf("Error abriendo conexión: %v", err)
-	}
+	// Crear conexión usando la configuración de pgx
+	DB = stdlib.OpenDB(*config)
 
 	// =========================
 	// CONFIGURACIÓN DEL POOL
 	// =========================
 
-	// Máximo de conexiones abiertas
 	DB.SetMaxOpenConns(10)
-
-	// Conexiones que pueden mantenerse inactivas
 	DB.SetMaxIdleConns(5)
 
-	// Tiempo máximo que una conexión puede estar viva
 	DB.SetConnMaxLifetime(30 * time.Minute)
-
-	// Tiempo máximo que una conexión puede estar inactiva
 	DB.SetConnMaxIdleTime(5 * time.Minute)
 
 	// =========================
@@ -65,6 +54,5 @@ func Connect() {
 		log.Fatalf("Error conectando a Supabase: %v", err)
 	}
 
-	log.Println("Conectado a Supabase correctamente")
-
+	log.Println("✅ Conectado a Supabase correctamente")
 }
