@@ -4,7 +4,7 @@ type Producto struct {
 	IDProducto  string `json:"id_producto"`
 	IDCategoria int    `json:"id_categoria"`
 	IDMarca     *int   `json:"id_marca,omitempty"`
-
+	Categoria   string `json:"categoria"`
 	Nombre      string `json:"nombre"`
 	Descripcion string `json:"descripcion"`
 	Modelo      string `json:"modelo"`

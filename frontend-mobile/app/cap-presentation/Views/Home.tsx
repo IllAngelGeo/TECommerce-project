@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import MenuLateral from "../components/MenuLateral";
 import { API_URL } from "../constants/api_url";
 import { Boton } from "../components/botones";
+import NavegacionCliente from  "../components/navegacioncliente"
 
 export default function DevolverHome() {
 
@@ -17,7 +17,6 @@ export default function DevolverHome() {
   const [cargando, setCargando] = useState(true);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState("");
-  const [menuVisible, setMenuVisible] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [precioMaximo, setPrecioMaximo] = useState("");
   const [ordenPrecio, setOrdenPrecio] = useState<"ninguno" | "menor" | "mayor">("ninguno");
@@ -186,9 +185,6 @@ export default function DevolverHome() {
               <Ionicons name="notifications-outline" size={23} color="#FFFFFF" />
             </Pressable>
 
-            <Pressable style={estilos.iconButton} onPress={() => setMenuVisible(true)}>
-              <Ionicons name="menu-outline" size={25} color="#FFFFFF" />
-            </Pressable>
           </View>
         </View>
 
@@ -263,15 +259,13 @@ export default function DevolverHome() {
 
             {productosMasVendidos.map((producto) => (
 
-              <Pressable key={producto.id_producto} style={estilos.productCard}>
-                <View style={estilos.productImageContainer}>
+                <Pressable key={producto.id_producto} style={estilos.productCard} onPress={() => router.push({ pathname: "/cap-presentation/Views/DetalleProducto", params: { id: producto.id_producto, }, })}>
+                  <View style={estilos.productImageContainer}>
                   <View style={estilos.badge}>
                     <Text style={estilos.badgeText}>Más vendido </Text>
                   </View>
 
-                  <Pressable style={estilos.favoriteButton}>
-                    <Ionicons name="heart-outline" size={18} color="#FFFFFF" />
-                  </Pressable>
+
 
                   {producto.imagen ? (
                     <Image source={{ uri: producto.imagen, }} style={estilos.productImage} resizeMode="contain" />
@@ -331,23 +325,20 @@ export default function DevolverHome() {
             {productosFiltrados.map(
               (producto) => (
 
-                <Pressable key={producto.id_producto} style={estilos.productCard}>
-
+             <Pressable
+  key={producto.id_producto}
+  style={estilos.productCard}
+  onPress={() =>
+    router.push({
+      pathname: "/cap-presentation/Views/DetalleProducto",
+      params: {
+        id: producto.id_producto,
+      },
+    })
+  }
+>
                   <View style={estilos.productImageContainer} >
 
-                    <Pressable
-                      style={
-                        estilos.favoriteButton
-                      }
-                    >
-
-                      <Ionicons
-                        name="heart-outline"
-                        size={18}
-                        color="#FFFFFF"
-                      />
-
-                    </Pressable>
 
                     {producto.imagen ? (
 
@@ -443,14 +434,6 @@ export default function DevolverHome() {
         )}
 
       </ScrollView>
-
-
-      {/* MENÚ LATERAL */}
-      <MenuLateral
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        seccionActual="inicio"
-      />
 
 
       {mostrarFiltros && (
@@ -580,42 +563,12 @@ export default function DevolverHome() {
         </View>
       )}
 
-      {/* =====================================
-          BOTÓN CARRITO
-      ====================================== */}
 
-      <Pressable
-        style={
-          estilos.cartButton
-        }
-      >
-
-        <Ionicons
-          name="cart-outline"
-          size={26}
-          color="#000000"
-        />
-
-        <View
-          style={
-            estilos.cartBadge
-          }
-        >
-
-          <Text
-            style={
-              estilos.cartBadgeText
-            }
-          >
-            0
-          </Text>
-
-        </View>
-
-      </Pressable>
+<NavegacionCliente seccionActual="inicio" />
 
     </SafeAreaView>
-  );
+
+);
 }
 
 const estilos = StyleSheet.create({
@@ -904,7 +857,7 @@ const estilos = StyleSheet.create({
 
   price: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
     marginTop: 5,
   },

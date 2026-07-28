@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   RefreshControl,
@@ -13,10 +12,12 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { API_URL } from "../constants/api_url";
+import NavegacionCliente from "../components/navegacioncliente";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -141,20 +142,7 @@ export default function Productos() {
     return categoria?.nombre || "Sin categoría";
   }, [categorias]);
 
-  if (cargando) {
-    return (
-      <SafeAreaView style={estilos.safe} >
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
-        <View style={estilos.centerContainer}>
-          <View style={estilos.loadingIcon}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-          </View>
-          <Text style={estilos.loadingText}>Cargando productos</Text>
-          <Text style={estilos.loadingSubtext}>Un momento, por favor...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+ 
 
   if (error) {
     return (
@@ -181,13 +169,7 @@ export default function Productos() {
 
       {/* HEADER CON PADDING SUPERIOR */}
       <View style={estilos.header}>
-        <Pressable
-          style={({ pressed }) => [estilos.backButton, pressed && estilos.buttonPressed]}
-          onPress={() => router.replace("/cap-presentation/Views/Home")}
-        >
-          <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-        </Pressable>
-
+       
         <View style={estilos.headerTitleContainer}>
           <Text style={estilos.headerTitle}>Productos</Text>
         </View>
@@ -277,9 +259,16 @@ export default function Productos() {
           ))}
         </ScrollView>
 
-        {/* PRODUCTOS */}
-        {productosPagina.length === 0 ? (
-          <View style={estilos.emptyContainer}>
+       {/* PRODUCTOS */}
+{cargando ? (
+  <View style={estilos.loadingProducts}>
+    <ActivityIndicator size="large" color="#FFFFFF" />
+    <Text style={estilos.loadingProductsText}>
+      Cargando productos...
+    </Text>
+  </View>
+) : productosPagina.length === 0 ? (
+  <View style={estilos.emptyContainer}>
             <Ionicons name="search-outline" size={60} color="#333333" />
             <Text style={estilos.emptyTitle}>No encontramos productos</Text>
             <Text style={estilos.emptyText}>
@@ -413,6 +402,9 @@ export default function Productos() {
 
         <View style={estilos.footerSpace} />
       </ScrollView>
+<NavegacionCliente seccionActual="productos" />
+
+
     </SafeAreaView>
   );
 }
@@ -917,4 +909,17 @@ const estilos = StyleSheet.create({
   footerSpace: {
     height: 20,
   },
+
+  loadingProducts: {
+  alignItems: "center",
+  justifyContent: "center",
+  paddingVertical: 50,
+},
+
+loadingProductsText: {
+  color: "#777777",
+  fontSize: 13,
+  marginTop: 12,
+},
+
 });
