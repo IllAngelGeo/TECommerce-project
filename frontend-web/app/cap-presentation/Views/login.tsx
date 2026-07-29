@@ -31,7 +31,7 @@ export default function Home() {
 
     console.log("Login correcto:", result.user);
 
-    router.push("/home");
+    router.push("/cap-presentation/Views/home");
 
   } catch (error: any) {
 
