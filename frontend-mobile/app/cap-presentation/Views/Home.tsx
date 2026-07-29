@@ -6,10 +6,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../constants/api_url";
 import { Boton } from "../components/botones";
 import NavegacionCliente from  "../components/navegacioncliente"
+import { useContext } from "react";
+import { CartContext } from "../../../app/context/CartContext";
 
 export default function DevolverHome() {
 
-
+const { carrito } = useContext(CartContext);
   const { categoria } = useLocalSearchParams();
 
   // ESTADOS
@@ -180,12 +182,47 @@ export default function DevolverHome() {
             <Text style={estilos.logoNombre}> TeCommerce </Text>
           </View>
 
-          <View style={estilos.headerIcons}>
-            <Pressable style={estilos.iconButton} >
-              <Ionicons name="notifications-outline" size={23} color="#FFFFFF" />
-            </Pressable>
+<View style={estilos.headerIcons}>
 
-          </View>
+  <Pressable 
+    style={estilos.iconButton}
+    onPress={() =>
+      router.push("/cap-presentation/Views/Carrito")
+    }
+  >
+
+    <Ionicons 
+      name="cart-outline" 
+      size={25} 
+      color="#FFFFFF" 
+    />
+
+
+    {carrito.length > 0 && (
+
+      <View style={estilos.cartBadge}>
+
+        <Text style={estilos.cartBadgeText}>
+          {carrito.length}
+        </Text>
+
+      </View>
+
+    )}
+
+  </Pressable>
+
+
+  <Pressable style={estilos.iconButton}>
+    <Ionicons 
+      name="notifications-outline" 
+      size={23} 
+      color="#FFFFFF" 
+    />
+  </Pressable>
+
+
+</View>
         </View>
 
         {/* BUSCADOR */}
@@ -790,7 +827,7 @@ const estilos = StyleSheet.create({
 
   productImageContainer: {
     height: 170,
-    backgroundColor: "#1A1A1A",
+    backgroundColor: "#fbfbfb",
     borderRadius: 15,
     borderWidth: 1,
     borderColor: "#2D2D2D",

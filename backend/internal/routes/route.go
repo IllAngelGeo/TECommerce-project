@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 
+	carritoControllers "ecommerce-backend/internal/carrito/controller"
 	categoriasControllers "ecommerce-backend/internal/categorias/controller"
 	productosControllers "ecommerce-backend/internal/productos/controllers"
 	usuariosControllers "ecommerce-backend/internal/usuarios/controllers"
@@ -135,5 +136,40 @@ func SetupRoutes(r *gin.Engine) {
 			"/:id_imagen",
 			productosControllers.DeleteProductImage,
 		)
+
 	}
+
+	// ==========================================
+	// CARRITO
+	// ==========================================
+
+	carrito := r.Group("/carrito")
+	{
+		carrito.GET("/test", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"mensaje": "carrito test funciona",
+			})
+		})
+
+		carrito.POST(
+			"",
+			carritoControllers.AgregarCarrito,
+		)
+
+		carrito.GET(
+			"/firebase/:id",
+			carritoControllers.ObtenerCarrito,
+		)
+
+		carrito.PUT(
+			"/:id_carrito",
+			carritoControllers.ActualizarCantidad,
+		)
+
+		carrito.DELETE(
+			"/:id_carrito",
+			carritoControllers.EliminarCarrito,
+		)
+	}
+
 }

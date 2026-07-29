@@ -8,3 +8,5 @@ type ProductoImagen struct {
 	Orden      int    `json:"orden"`
 	Principal  bool   `json:"principal"`
 }
+
+

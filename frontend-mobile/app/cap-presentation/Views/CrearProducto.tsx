@@ -41,6 +41,8 @@ export default function CrearProducto() {
   const [destacado, setDestacado] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
+  const [stock, setStock] = useState("");
+  const [stockMinimo, setStockMinimo] = useState("");
 
   // ==========================================
   // OBTENER CATEGORÍAS
@@ -174,20 +176,41 @@ export default function CrearProducto() {
       return;
     }
 
+    if (!stock.trim()) {
+  Alert.alert("Campo requerido", "Ingresa el stock del producto.");
+  return;
+}
+
+if (!stockMinimo.trim()) {
+  Alert.alert("Campo requerido", "Ingresa el stock mínimo.");
+  return;
+}
+
+if (Number(stock) < 0 || Number(stockMinimo) < 0) {
+  Alert.alert(
+    "Stock inválido",
+    "El stock no puede ser negativo."
+  );
+  return;
+}
+
     try {
       setCargando(true);
 
-      const producto = {
-        id_categoria: idCategoria,
-        nombre: nombre.trim(),
-        descripcion: descripcion.trim() || null,
-        modelo: modelo.trim() || null,
-        precio: Number(precio),
-        precio_oferta: precioOferta.trim() ? Number(precioOferta) : null,
-        activo: activo,
-        destacado: destacado,
-      };
-
+const producto = {
+  id_categoria: idCategoria,
+  nombre: nombre.trim(),
+  descripcion: descripcion.trim() || null,
+  modelo: modelo.trim() || null,
+  precio: Number(precio),
+  precio_oferta: precioOferta.trim()
+    ? Number(precioOferta)
+    : null,
+  stock: Number(stock),
+  stock_minimo: Number(stockMinimo),
+  activo: activo,
+  destacado: destacado,
+};
       console.log("Producto enviado:", producto);
 
       const response = await fetch(`${API_URL}/productos`, {
@@ -419,6 +442,45 @@ if (imagenesSeleccionadas.length > 0 && data.producto?.id_producto) {
             keyboardType="decimal-pad"
           />
         </View>
+
+<View style={estilos.seccion}>
+
+  <View style={estilos.seccionHeader}>
+    <Ionicons name="layers-outline" size={22} color="#FFFFFF" />
+    <Text style={estilos.seccionTitulo}>
+      Inventario
+    </Text>
+  </View>
+
+
+  <Text style={estilos.label}>
+    Stock disponible *
+  </Text>
+
+  <TextInput
+    style={estilos.input}
+    placeholder="Ej. 50"
+    placeholderTextColor="#555555"
+    value={stock}
+    onChangeText={setStock}
+    keyboardType="number-pad"
+  />
+
+
+  <Text style={estilos.label}>
+    Stock mínimo *
+  </Text>
+
+  <TextInput
+    style={estilos.input}
+    placeholder="Ej. 5"
+    placeholderTextColor="#555555"
+    value={stockMinimo}
+    onChangeText={setStockMinimo}
+    keyboardType="number-pad"
+  />
+
+</View>
 
         {/* ==========================================
             CONFIGURACIÓN

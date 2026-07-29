@@ -343,3 +343,21 @@ func DeleteProduct(id string) error {
 	return err
 
 }
+
+
+func DeleteAllProductImages(
+	productID string,
+) error {
+
+	query := `
+	DELETE FROM producto_imagenes
+	WHERE id_producto = $1
+	`
+
+	_, err := database.DB.Exec(
+		query,
+		productID,
+	)
+
+	return err
+}

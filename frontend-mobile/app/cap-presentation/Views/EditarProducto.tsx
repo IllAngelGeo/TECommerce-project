@@ -42,7 +42,9 @@ export default function EditarProducto() {
   const [cargando, setCargando] = useState(false);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
   const [cargandoProducto, setCargandoProducto] = useState(true);
-  
+  const [stock, setStock] = useState("");
+const [stockMinimo, setStockMinimo] = useState("");
+
   // OBTENER CATEGORÍAS
  
 useEffect(() => {
@@ -53,29 +55,41 @@ useEffect(() => {
   }
 }, [id]);
 
-  const obtenerCategorias = async () => {
-    try {
-      setCargandoCategorias(true);
-      const response = await fetch(`${API_URL}/categorias`);
+const obtenerCategorias = async () => {
+  try {
+    setCargandoCategorias(true);
 
-      if (!response.ok) {
-        throw new Error("No se pudieron obtener las categorías");
-      }
+    const response = await fetch(`${API_URL}/categorias`);
 
-      const data = await response.json();
-      console.log(
-  "RESPUESTA CREAR PRODUCTO:",
-  JSON.stringify(data, null, 2)
-);
-
-      setCategorias(data);
-    } catch (error) {
-      console.error("Error obteniendo categorías:", error);
-      Alert.alert("Error", "No se pudieron cargar las categorías.");
-    } finally {
-      setCargandoCategorias(false);
+    if (!response.ok) {
+      throw new Error("No se pudieron obtener las categorías");
     }
-  };
+
+    const data = await response.json();
+
+    console.log(
+      "CATEGORIAS:",
+      JSON.stringify(data, null, 2)
+    );
+
+    setCategorias(data);
+
+  } catch (error) {
+
+    console.error(
+      "Error obteniendo categorías:",
+      error
+    );
+
+    Alert.alert(
+      "Error",
+      "No se pudieron cargar las categorías."
+    );
+
+  } finally {
+    setCargandoCategorias(false);
+  }
+};
 
 // ==========================================
 // OBTENER PRODUCTO PARA EDITAR
@@ -112,6 +126,18 @@ const obtenerProducto = async (idProducto: string) => {
     );
     setActivo(producto.activo ?? true);
     setDestacado(producto.destacado ?? false);
+
+    setStock(
+  producto.stock !== undefined
+    ? producto.stock.toString()
+    : ""
+);
+
+setStockMinimo(
+  producto.stock_minimo !== undefined
+    ? producto.stock_minimo.toString()
+    : ""
+);
 
   } catch (error) {
     console.error("Error obteniendo producto:", error);
@@ -205,26 +231,17 @@ const obtenerProducto = async (idProducto: string) => {
   }
 
   if (idCategoria === null) {
-    Alert.alert(
-      "Campo requerido",
-      "Selecciona una categoría para el producto."
-    );
+    Alert.alert("Campo requerido", "Selecciona una categoría para el producto.");
     return;
   }
 
   if (!nombre.trim()) {
-    Alert.alert(
-      "Campo requerido",
-      "Ingresa el nombre del producto."
-    );
+    Alert.alert("Campo requerido", "Ingresa el nombre del producto.");
     return;
   }
 
   if (!precio.trim()) {
-    Alert.alert(
-      "Campo requerido",
-      "Ingresa el precio del producto."
-    );
+    Alert.alert("Campo requerido", "Ingresa el precio del producto.");
     return;
   }
 
@@ -242,31 +259,29 @@ const obtenerProducto = async (idProducto: string) => {
   try {
     setCargando(true);
 
-    const producto = {
-      id_categoria: idCategoria,
-      nombre: nombre.trim(),
-      descripcion: descripcion.trim() || null,
-      modelo: modelo.trim() || null,
-      precio: Number(precio),
-      precio_oferta: precioOferta.trim()
-        ? Number(precioOferta)
-        : null,
-      activo,
-      destacado,
-    };
+   const producto = {
+  id_categoria: idCategoria,
+  nombre: nombre.trim(),
+  descripcion: descripcion.trim() || null,
+  modelo: modelo.trim() || null,
+  precio: Number(precio),
+  precio_oferta: precioOferta.trim()
+    ? Number(precioOferta)
+    : null,
+  activo,
+  destacado,
 
-    console.log("Producto actualizado:", producto);
+  stock: Number(stock),
+  stock_minimo: Number(stockMinimo),
+};
 
-    const response = await fetch(
-      `${API_URL}/productos/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(producto),
-      }
-    );
+    const response = await fetch(`${API_URL}/productos/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(producto),
+    });
 
     const data = await response.json();
 
@@ -276,25 +291,135 @@ const obtenerProducto = async (idProducto: string) => {
       );
     }
 
-    Alert.alert("Producto actualizado", "El producto se actualizó correctamente.", 
+    // ===========================
+    // ACTUALIZAR IMÁGENES
+    // ===========================
+   // ===========================
+// ACTUALIZAR IMÁGENES
+// ===========================
+if (imagenesSeleccionadas.length > 0) {
+
+  setSubiendoImagen(true);
+
+
+  // Obtener imágenes actuales
+  const responseImagenes = await fetch(
+    `${API_URL}/productos/${id}/imagenes`
+  );
+
+
+  if (!responseImagenes.ok) {
+    throw new Error(
+      "No se pudieron obtener las imágenes actuales."
+    );
+  }
+
+
+  const dataImagenes = await responseImagenes.json();
+
+
+  console.log(
+    "IMAGENES ACTUALES:",
+    JSON.stringify(dataImagenes, null, 2)
+  );
+
+
+  const imagenesActuales = Array.isArray(dataImagenes)
+    ? dataImagenes
+    : dataImagenes.imagenes || [];
+
+
+
+  // ===========================
+  // ELIMINAR IMAGENES VIEJAS
+  // ===========================
+  for (const imagen of imagenesActuales) {
+
+
+    console.log(
+      "Eliminando imagen:",
+      imagen.id_imagen
+    );
+
+
+    const eliminar = await fetch(
+  `${API_URL}/productos/${id}/imagenes/${imagen.id_imagen}`,
+  {
+    method: "DELETE",
+  }
+);
+
+
+    if (!eliminar.ok) {
+
+      throw new Error(
+        `No se pudo eliminar la imagen ${imagen.id_imagen}`
+      );
+
+    }
+
+  }
+
+
+
+  // ===========================
+  // SUBIR IMAGENES NUEVAS
+  // ===========================
+  for (
+    let i = 0;
+    i < imagenesSeleccionadas.length;
+    i++
+  ) {
+
+
+    await subirImagenProducto(
+      id,
+      imagenesSeleccionadas[i],
+      i
+    );
+
+
+  }
+
+
+      setSubiendoImagen(false);
+    }
+
+    Alert.alert(
+      "Producto actualizado",
+      "El producto se actualizó correctamente.",
       [
         {
           text: "Aceptar",
           onPress: () =>
-            router.replace("/cap-presentation/Views/CrudProducto" ),
+            router.replace(
+              "/cap-presentation/Views/CrudProducto"
+            ),
         },
       ]
     );
 
   } catch (error) {
-    console.error( "Error actualizando producto:", error );
 
-    Alert.alert( "Error", error instanceof Error ? error.message : "No se pudo actualizar el producto." );
+    console.error(
+      "Error actualizando producto:",
+      error
+    );
+
+    Alert.alert(
+      "Error",
+      error instanceof Error
+        ? error.message
+        : "No se pudo actualizar el producto."
+    );
+
   } finally {
+
     setCargando(false);
+    setSubiendoImagen(false);
+
   }
 };
-  // ==========================================
   // OBTENER NOMBRE DE CATEGORÍA
   // ==========================================
   const obtenerNombreCategoria = () => {
@@ -315,8 +440,8 @@ const obtenerProducto = async (idProducto: string) => {
         </Pressable>
 
         <View style={estilos.headerTexto}>
-          <Text style={estilos.titulo}>Crear producto</Text>
-          <Text style={estilos.subtitulo}>Agrega un nuevo producto al catálogo</Text>
+          <Text style={estilos.titulo}>Editar producto</Text>
+          <Text style={estilos.subtitulo}>Edita el producto</Text>
         </View>
       </View>
 
@@ -463,6 +588,53 @@ const obtenerProducto = async (idProducto: string) => {
         </View>
 
         {/* ==========================================
+    INVENTARIO
+========================================== */}
+<View style={estilos.seccion}>
+
+  <View style={estilos.seccionHeader}>
+    <Ionicons 
+      name="layers-outline" 
+      size={22} 
+      color="#FFFFFF" 
+    />
+
+    <Text style={estilos.seccionTitulo}>
+      Inventario
+    </Text>
+  </View>
+
+
+  <Text style={estilos.label}>
+    Stock actual *
+  </Text>
+
+  <TextInput
+    style={estilos.input}
+    placeholder="Ej. 20"
+    placeholderTextColor="#555555"
+    value={stock}
+    onChangeText={setStock}
+    keyboardType="numeric"
+  />
+
+
+  <Text style={estilos.label}>
+    Stock mínimo
+  </Text>
+
+  <TextInput
+    style={estilos.input}
+    placeholder="Ej. 5"
+    placeholderTextColor="#555555"
+    value={stockMinimo}
+    onChangeText={setStockMinimo}
+    keyboardType="numeric"
+  />
+
+</View>
+
+        {/* ==========================================
             CONFIGURACIÓN
         ========================================== */}
         <View style={estilos.seccion}>
@@ -516,7 +688,7 @@ const obtenerProducto = async (idProducto: string) => {
             <>
               <ActivityIndicator size="small" color="#000000" />
               <Text style={estilos.botonCrearTexto}>
-                {subiendoImagen ? "Subiendo imágenes..." : "Creando..."}
+                {subiendoImagen ? "Editando imágenes..." : "Creando..."}
               </Text>
             </>
           ) : (
