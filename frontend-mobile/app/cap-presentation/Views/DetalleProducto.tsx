@@ -2,8 +2,12 @@ import React, { useEffect, useRef, useState } from "react";
 import {ActivityIndicator,Animated,Image,Pressable,ScrollView,StyleSheet,Text,View,Dimensions,} from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-
+import {useContext} from "react";
+import {CartContext} from "../../context/CartContext";
 import { API_URL } from "../constants/api_url";
+import {Alert} from "react-native";
+import { auth } from "../../firebase/firebase";
+
 
 const { width } = Dimensions.get('window');
 
@@ -20,8 +24,10 @@ const insets = useSafeAreaInsets();
   const carruselRef = useRef<ScrollView>(null);
   const [imagenes, setImagenes] = useState<any[]>([]);
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
+  const {agregarCarrito}=useContext(CartContext);
+  const usuario = auth.currentUser;
 
-useEffect(() => {
+  useEffect(() => {
   if (producto?.stock > 0) {
     const animacion = Animated.loop(
       Animated.sequence([
@@ -347,14 +353,13 @@ const cambiarImagen = (index: number) => {
           ]}
         >
 
-          <Image
-            source={{
-              uri: imagen.imagen_url,
-            }}
-            style={estilos.miniaturaImagen}
-            resizeMode="cover"
-          />
-
+<Image
+  source={{
+    uri: imagen.imagen_url,
+  }}
+  style={estilos.miniaturaImagen}
+  resizeMode="contain"
+/>
         </Pressable>
 
       ))}
@@ -561,15 +566,28 @@ const cambiarImagen = (index: number) => {
         estilos.botonDeshabilitado,
     ]}
     disabled={producto.stock <= 0}
-    onPress={() => {
-      console.log(
-        "Agregar al carrito:",
-        producto.id_producto,
-        "Cantidad:",
-        cantidad
-      );
-    }}
-  >
+ onPress={() => {
+
+if(usuario){
+
+ agregarCarrito(
+    {
+      ...producto,
+      cantidad,
+      precio:precioActual,
+      imagen:producto.imagen
+    },
+    usuario.uid
+ );
+
+ Alert.alert(
+   "Carrito",
+   "Producto agregado correctamente"
+ );
+
+}
+
+}} >
     <Ionicons
       name="cart-outline"
       size={22}
@@ -644,7 +662,7 @@ const estilos = StyleSheet.create({
     height: 320,
     margin: 16,
     borderRadius: 20,
-    backgroundColor: "#0A0A0A",
+    backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#1A1A1A",
     justifyContent: "center",
@@ -695,7 +713,7 @@ contadorTexto: {
     position: "absolute",
     top: 15,
     left: 15,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#d7d4d4",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -1064,15 +1082,16 @@ miniaturasContainer: {
 },
 
 miniatura: {
-  width: 70,
-  height: 70,
-  borderRadius: 10,
-  backgroundColor: "#0A0A0A",
+  width: 75,
+  height: 75,
+  borderRadius: 12,
+  backgroundColor: "#FFFFFF",
   borderWidth: 1,
   borderColor: "#1A1A1A",
   overflow: "hidden",
   justifyContent: "center",
   alignItems: "center",
+  padding: 5,
 },
 
 miniaturaSeleccionada: {
@@ -1084,5 +1103,4 @@ miniaturaImagen: {
   width: "100%",
   height: "100%",
 },
-
 });

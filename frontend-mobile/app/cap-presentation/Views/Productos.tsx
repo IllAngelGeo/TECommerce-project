@@ -290,9 +290,14 @@ export default function Productos() {
                   estilos.productCard,
                   pressed && estilos.productCardPressed,
                 ]}
-                onPress={() => {
-                }}
-              >
+              onPress={() =>
+  router.push({
+    pathname: "/cap-presentation/Views/DetalleProducto",
+    params: {
+      id: producto.id_producto,
+    },
+  })
+}              >
                 <View style={estilos.imageContainer}>
                   {producto.destacado && (
                     <View style={estilos.badge}>
@@ -649,7 +654,7 @@ const estilos = StyleSheet.create({
 
   imageContainer: {
     height: 180,
-    backgroundColor: "#151515",
+    backgroundColor: "#fefbfb",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#2D2D2D",
@@ -668,7 +673,7 @@ const estilos = StyleSheet.create({
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#d7d4d4",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,

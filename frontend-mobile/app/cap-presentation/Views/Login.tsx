@@ -5,7 +5,7 @@ import { useState } from "react";
 import {ActivityIndicator,Pressable,StyleSheet,Text,TextInput,useColorScheme,View,KeyboardAvoidingView,Platform,TouchableWithoutFeedback,Keyboard,Alert,} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Imagen } from "../components/Imagen";
-import {signInWithEmailAndPassword } from "firebase/auth"; 
+import {onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth"; 
 import {auth} from "../../firebase/firebase";
 import { useEffect } from "react";
 import * as Google from "expo-auth-session/providers/google";
@@ -90,6 +90,16 @@ const idToken =
   autenticarGoogle();
 
 }, [response]);
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      router.replace("/cap-presentation/Views/Home");
+    }
+  });
+
+  return unsubscribe;
+}, []);
 
 const handleLogin = async () => {
   setMensaje("");

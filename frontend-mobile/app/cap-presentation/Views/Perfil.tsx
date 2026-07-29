@@ -1,8 +1,8 @@
 import React from "react";
 import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Dimensions, } from "react-native";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "../../firebase/firebase";
+import {onAuthStateChanged, User, signOut,
+} from "firebase/auth";import { auth } from "../../firebase/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import NavegacionCliente from "../components/navegacioncliente";
@@ -20,6 +20,18 @@ export default function Perfil() {
 
     return unsubscribe;
   }, []);
+
+const cerrarSesion = async () => {
+  try {
+    await signOut(auth);
+
+    router.dismissAll(); // limpia el historial de navegación
+    router.replace("/"); // vuelve al index -> Login
+
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   return (
     <SafeAreaView style={estilos.safe}>
@@ -140,12 +152,13 @@ export default function Perfil() {
         </View>
 
         {/* CERRAR SESIÓN CON DISEÑO MEJORADO */}
-        <Pressable
-          style={({ pressed }) => [
-            estilos.logoutButton,
-            pressed && estilos.buttonPressed,
-          ]}
-        >
+      <Pressable
+  onPress={cerrarSesion}
+  style={({ pressed }) => [
+    estilos.logoutButton,
+    pressed && estilos.buttonPressed,
+  ]}
+>
           <View style={estilos.logoutIconContainer}>
             <Ionicons name="log-out-outline" size={22} color="#ef4444" />
           </View>
