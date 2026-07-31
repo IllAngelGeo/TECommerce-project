@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { auth } from "../../../firebase/firebase";
 import {
   Image,
   Pressable,
@@ -16,8 +17,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { API_URL } from "../constants/api_url";
-import NavegacionCliente from "../components/navegacioncliente";
+import { API_URL } from "../../constants/api_url";
+import NavegacionCliente from "../../components/navegacioncliente";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -52,12 +53,15 @@ export default function Productos() {
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [favoritos, setFavoritos] = useState<string[]>([]);
+  
   const productosPorPagina = 6;
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+useEffect(() => {
+  cargarDatos();
+  cargarFavoritos();
+}, []);
+
 
   const cargarDatos = async () => {
     try {
@@ -94,6 +98,113 @@ export default function Productos() {
       setRefrescando(false);
     }
   };
+
+const cargarFavoritos = async () => {
+  try {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      console.log("No hay usuario autenticado");
+      return;
+    }
+
+    const response = await fetch(
+      `${API_URL}/favoritos/firebase/${usuario.uid}`
+    );
+
+    if (!response.ok) {
+      throw new Error("No se pudieron obtener los favoritos");
+    }
+
+    const data = await response.json();
+
+    const idsFavoritos = data.map(
+      (favorito: any) => favorito.id_producto
+    );
+
+    setFavoritos(idsFavoritos);
+
+    console.log("Favoritos:", idsFavoritos);
+
+  } catch (error) {
+    console.error("Error cargando favoritos:", error);
+  }
+};
+
+const cambiarFavorito = async (producto: Producto) => {
+  try {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      console.log("No hay usuario autenticado");
+      return;
+    }
+
+    const idProducto = String(producto.id_producto);
+
+    const esFavorito = favoritos.includes(idProducto);
+
+    // =========================
+    // ELIMINAR DE FAVORITOS
+    // =========================
+    if (esFavorito) {
+      const response = await fetch(
+        `${API_URL}/favoritos/firebase/${usuario.uid}/producto/${idProducto}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Error eliminando favorito:", data);
+        return;
+      }
+
+      setFavoritos((actuales) =>
+        actuales.filter((id) => id !== idProducto)
+      );
+
+      console.log("Favorito eliminado");
+      return;
+    }
+
+    // =========================
+    // AGREGAR A FAVORITOS
+    // =========================
+    const response = await fetch(
+      `${API_URL}/favoritos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_usuario: usuario.uid,
+          id_producto: idProducto,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.log("Error agregando favorito:", data);
+      return;
+    }
+
+    setFavoritos((actuales) => [
+      ...actuales,
+      idProducto,
+    ]);
+
+    console.log("Favorito agregado");
+
+  } catch (error) {
+    console.error("Error cambiando favorito:", error);
+  }
+};
 
   const productosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase().trim();
@@ -292,7 +403,7 @@ export default function Productos() {
                 ]}
               onPress={() =>
   router.push({
-    pathname: "/cap-presentation/Views/DetalleProducto",
+    pathname: "/cap-presentation/Views/cliente/DetalleProducto",
     params: {
       id: producto.id_producto,
     },
@@ -311,9 +422,23 @@ export default function Productos() {
                     </View>
                   )}
 
-                  <Pressable style={estilos.favoriteButton}>
-                    <Ionicons name="heart-outline" size={18} color="#FFFFFF" />
-                  </Pressable>
+  <Pressable
+  style={estilos.favoriteButton}
+  onPress={(event) => {
+    event.stopPropagation();
+    cambiarFavorito(producto);
+  }}
+>
+  <Ionicons
+    name={
+      favoritos.includes(String(producto.id_producto))
+        ? "heart"
+        : "heart-outline"
+    }
+    size={18}
+    color="#FFFFFF"
+  />
+</Pressable>
 
                   {producto.imagen ? (
                     <Image

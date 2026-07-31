@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Pressable, SafeAreaView, StyleSheet, Text, View, ActivityIndicator, RefreshControl, StatusBar, Platform, ScrollView, } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { API_URL } from "../constants/api_url";
+import { API_URL } from "../../constants/api_url";
 
 interface Categoria {
   id_categoria: number;
@@ -110,7 +110,7 @@ export default function Categorias() {
           ]}
           onPress={() => {
             router.replace({
-              pathname: "/cap-presentation/Views/Home",
+              pathname: "/cap-presentation/Views/cliente/Home",
               params: {
                 categoria: item.id_categoria.toString(),
               },
@@ -181,7 +181,7 @@ export default function Categorias() {
             estilos.backButton,
             pressed && estilos.headerButtonPressed,
           ]}
-          onPress={() => router.replace("/cap-presentation/Views/Home")}
+          onPress={() => router.replace("/cap-presentation/Views/cliente/Home")}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </Pressable>

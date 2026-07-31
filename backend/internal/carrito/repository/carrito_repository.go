@@ -1,62 +1,132 @@
 package repository
 
 import (
+	"errors"
+
 	"ecommerce-backend/internal/carrito/models"
 	"ecommerce-backend/internal/database"
 )
 
-func AgregarProducto(carrito *models.Carrito) error {
+// ==========================================
+// ERRORES
+// ==========================================
 
-	query := `
-
-INSERT INTO carrito
-(
-id_usuario,
-id_producto,
-cantidad
+var (
+	ErrStockInsuficiente = errors.New("stock insuficiente")
+	ErrProductoNoExiste  = errors.New("producto no existe")
+	ErrCarritoNoExiste   = errors.New("producto no existe en el carrito")
 )
 
-VALUES
-($1,$2,$3)
+// ==========================================
+// AGREGAR PRODUCTO AL CARRITO
+// ==========================================
 
-`
+func AgregarProducto(carrito *models.Carrito) error {
 
-	_, err := database.DB.Exec(
+	// Primero verificamos que el producto exista
+	// y obtenemos su stock actual.
+
+	var stock int
+
+	err := database.DB.QueryRow(`
+		SELECT i.stock
+		FROM inventario i
+		WHERE i.id_producto = $1
+	`,
+		carrito.IDProducto,
+	).Scan(&stock)
+
+	if err != nil {
+
+		// Si no existe inventario para ese producto
+		// consideramos que el producto no existe.
+
+		return ErrProductoNoExiste
+	}
+
+	// Verificar que la cantidad solicitada
+	// no sea mayor al stock disponible.
+
+	if carrito.Cantidad > stock {
+		return ErrStockInsuficiente
+	}
+
+	// ==========================================
+	// INSERTAR O AUMENTAR CANTIDAD
+	// ==========================================
+
+	query := `
+		INSERT INTO carrito
+		(
+			id_usuario,
+			id_producto,
+			cantidad
+		)
+		VALUES ($1, $2, $3)
+
+		ON CONFLICT (id_usuario, id_producto)
+		DO UPDATE SET
+			cantidad = carrito.cantidad + EXCLUDED.cantidad
+
+		WHERE carrito.cantidad + EXCLUDED.cantidad <= $4
+	`
+
+	result, err := database.DB.Exec(
 		query,
 		carrito.IDUsuario,
 		carrito.IDProducto,
 		carrito.Cantidad,
+		stock,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
 
+	filas, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if filas == 0 {
+		return ErrStockInsuficiente
+	}
+
+	return nil
 }
 
+// ==========================================
 // OBTENER CARRITO DE USUARIO
-// OBTENER CARRITO DE USUARIO
+// ==========================================
+
 func ObtenerCarrito(idUsuario string) ([]models.Carrito, error) {
 
 	query := `
-SELECT
-c.id_carrito,
-c.id_usuario,
-c.id_producto,
-c.cantidad,
-p.nombre,
-p.precio,
-pi.imagen_url
+		SELECT
+			c.id_carrito,
+			c.id_usuario,
+			c.id_producto,
+			c.cantidad,
+			p.nombre,
+			p.precio,
+			pi.imagen_url,
+			COALESCE(i.stock, 0)
 
-FROM carrito c
+		FROM carrito c
 
-INNER JOIN productos p
-ON p.id_producto = c.id_producto
+		INNER JOIN productos p
+			ON p.id_producto = c.id_producto
 
-LEFT JOIN producto_imagenes pi
-ON pi.id_producto = p.id_producto
-AND pi.principal = true
+		LEFT JOIN inventario i
+			ON i.id_producto = p.id_producto
 
-WHERE c.id_usuario = $1
-`
+		LEFT JOIN producto_imagenes pi
+			ON pi.id_producto = p.id_producto
+			AND pi.principal = true
+
+		WHERE c.id_usuario = $1
+	`
 
 	rows, err := database.DB.Query(
 		query,
@@ -83,6 +153,7 @@ WHERE c.id_usuario = $1
 			&producto.Nombre,
 			&producto.Precio,
 			&producto.Imagen,
+			&producto.Stock,
 		)
 
 		if err != nil {
@@ -92,30 +163,89 @@ WHERE c.id_usuario = $1
 		carrito = append(carrito, producto)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	if carrito == nil {
 		carrito = []models.Carrito{}
 	}
 
 	return carrito, nil
-
 }
 
-func ActualizarCantidad(idCarrito string, cantidad int) error {
+// ==========================================
+// ACTUALIZAR CANTIDAD
+// ==========================================
+
+func ActualizarCantidad(
+	idCarrito string,
+	cantidad int,
+) error {
 
 	query := `
-	UPDATE carrito
-	SET cantidad = $1
-	WHERE id_carrito = $2
+		UPDATE carrito c
+
+		SET cantidad = $1
+
+		FROM inventario i
+
+		WHERE c.id_carrito = $2
+
+		AND i.id_producto = c.id_producto
+
+		AND $1 <= i.stock
 	`
 
-	_, err := database.DB.Exec(
+	result, err := database.DB.Exec(
 		query,
 		cantidad,
 		idCarrito,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	filas, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if filas == 0 {
+
+		// Verificamos si el carrito existe.
+
+		var existe bool
+
+		err := database.DB.QueryRow(`
+			SELECT EXISTS(
+				SELECT 1
+				FROM carrito
+				WHERE id_carrito = $1
+			)
+		`,
+			idCarrito,
+		).Scan(&existe)
+
+		if err != nil {
+			return err
+		}
+
+		if !existe {
+			return ErrCarritoNoExiste
+		}
+
+		return ErrStockInsuficiente
+	}
+
+	return nil
 }
+
+// ==========================================
+// OBTENER ID USUARIO POR FIREBASE
+// ==========================================
 
 func ObtenerIDUsuarioFirebase(
 	idFirebase string,
@@ -124,10 +254,10 @@ func ObtenerIDUsuarioFirebase(
 	var id string
 
 	query := `
-SELECT id_usuario
-FROM usuarios
-WHERE id_firebase=$1
-`
+		SELECT id_usuario
+		FROM usuarios
+		WHERE id_firebase = $1
+	`
 
 	err := database.DB.QueryRow(
 		query,
@@ -135,20 +265,39 @@ WHERE id_firebase=$1
 	).Scan(&id)
 
 	return id, err
-
 }
 
-func EliminarCarrito(idCarrito string) error {
+// ==========================================
+// ELIMINAR PRODUCTO DEL CARRITO
+// ==========================================
+
+func EliminarCarrito(
+	idCarrito string,
+) error {
 
 	query := `
-	DELETE FROM carrito
-	WHERE id_carrito = $1
+		DELETE FROM carrito
+		WHERE id_carrito = $1
 	`
 
-	_, err := database.DB.Exec(
+	result, err := database.DB.Exec(
 		query,
 		idCarrito,
 	)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	filas, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if filas == 0 {
+		return ErrCarritoNoExiste
+	}
+
+	return nil
 }

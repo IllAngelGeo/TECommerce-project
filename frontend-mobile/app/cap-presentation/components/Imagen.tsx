@@ -1,38 +1,43 @@
 import React from "react";
-import { Image, StyleSheet, View, ViewStyle } from "react-native";
+import { Image, StyleSheet, ImageStyle } from "react-native";
 
-
-/* Propiedades de la interfaz */
 
 interface ImagenesProps{
-  source: number | { uri: string }; // number si es source, y uri si es url
+  source: number | { uri: string };
   width?: number;
   height?: number;
-  style?: ViewStyle;
+  style?: ImageStyle;
 }
 
-/** Componente a exportar  */
-export const Imagen = ( {source, width,height, style}:ImagenesProps ) =>{
-return (
 
-    <View style={[styles.container, {width: width, height: height}, style]}>
-    <Image   style={{ width: '100%', height: '100%' }} source={source}/>
-    </View>
+export const Imagen = ({
+  source,
+  width,
+  height,
+  style
+}: ImagenesProps) => {
 
-);
+  return (
+    <Image
+      source={source}
+      style={[
+        styles.imagen,
+        {
+          width: width,
+          height: height,
+        },
+        style
+      ]}
+    />
+  );
 
-}
+};
 
-// Estilos
-   const styles = StyleSheet.create({
-      container: {
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
 
-    imagenes: {
-      width: 50,
-      height: 50,
-    }
+const styles = StyleSheet.create({
+
+  imagen:{
+    resizeMode:"contain"
+  }
 
 });

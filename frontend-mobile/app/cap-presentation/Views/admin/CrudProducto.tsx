@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { API_URL } from "../constants/api_url";
+import { API_URL } from "../../constants/api_url";
 
 import React, { useEffect, useMemo, useState } from "react";
 import {

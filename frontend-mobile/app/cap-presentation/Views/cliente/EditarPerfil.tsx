@@ -14,9 +14,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { updateProfile } from "firebase/auth";
-import { auth } from "../../firebase/firebase";
-
-const API_URL = "http://192.168.0.86:8080";
+import { auth } from "../../../firebase/firebase";
+import { API_URL } from "../../constants/api_url";
 
 export default function EditarPerfil() {
   const usuario = auth.currentUser;

@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { API_URL } from "../constants/api_url";
+import { API_URL } from "../../constants/api_url";
 
 interface Categoria {
   id_categoria: number;

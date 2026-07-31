@@ -4,15 +4,15 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {ActivityIndicator,Pressable,StyleSheet,Text,TextInput,useColorScheme,View,KeyboardAvoidingView,Platform,TouchableWithoutFeedback,Keyboard,Alert,} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Imagen } from "../components/Imagen";
+import { Imagen } from "../../components/Imagen";
 import {onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth"; 
-import {auth} from "../../firebase/firebase";
+import {auth} from "../../../firebase/firebase";
 import { useEffect } from "react";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { GoogleAuthProvider,signInWithCredential,} from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { API_URL } from "../constants/api_url";
+import { API_URL } from "../../constants/api_url";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -68,7 +68,7 @@ const idToken =
         );
 
         router.replace(
-          "/cap-presentation/Views/Home"
+          "/cap-presentation/Views/cliente/Home"
         );
 
       } catch (error) {
@@ -94,7 +94,7 @@ const idToken =
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     if (user) {
-      router.replace("/cap-presentation/Views/Home");
+      router.replace("/cap-presentation/Views/cliente/Home");
     }
   });
 
@@ -143,13 +143,13 @@ const handleLogin = async () => {
     if (data.rol === "admin") {
 
       router.replace(
-        "/cap-presentation/Views/AdminHome"
+        "/cap-presentation/Views/admin/AdminHome"
       );
 
     } else {
 
       router.replace(
-        "/cap-presentation/Views/Home"
+        "/cap-presentation/Views/cliente/Home"
       );
 
     }
@@ -246,7 +246,7 @@ const handleForgotPassword = async () => {
 
             {/* Campos de entrada */}
             <View style={styles.inputContainer}>
-             <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+             <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1785478766/usuario_mwcnk1.png", }} style={{ width: 20, height: 20}}/> 
              <TextInput style={styles.input} placeholder="Usuario o correo electrónico" placeholderTextColor="#6B7280" value={usuario} onChangeText={setUsuario} autoCapitalize="none" autoCorrect={false} />
             </View>
 
@@ -298,7 +298,7 @@ const handleForgotPassword = async () => {
 {/* Registro */}
 <View style={styles.registerContainer}>
   <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-  <Pressable onPress={() => router.replace("/cap-presentation/Views/Registrate")}>
+  <Pressable onPress={() => router.replace("/cap-presentation/Views/auth/Registrate")}>
     <Text style={styles.registerLink}>Regístrate ahora</Text>
   </Pressable>
 </View>
