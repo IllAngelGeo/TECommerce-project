@@ -3,11 +3,11 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { API_URL } from "../constants/api_url";
-import { Boton } from "../components/botones";
-import NavegacionCliente from  "../components/navegacioncliente"
+import { API_URL } from "../../constants/api_url";
+import { Boton } from "../../components/botones";
+import NavegacionCliente from  "../../components/navegacioncliente"
 import { useContext } from "react";
-import { CartContext } from "../../../app/context/CartContext";
+import { CartContext } from "../../../context/CartContext";
 
 export default function DevolverHome() {
 
@@ -187,7 +187,7 @@ const { carrito } = useContext(CartContext);
   <Pressable 
     style={estilos.iconButton}
     onPress={() =>
-      router.push("/cap-presentation/Views/Carrito")
+      router.push("/cap-presentation/Views/cliente/Carrito")
     }
   >
 
@@ -241,7 +241,7 @@ const { carrito } = useContext(CartContext);
             <Text style={estilos.bannerSmall} > OFERTA ESPECIAL </Text>
             <Text style={estilos.bannerTitle} > HASTA 30% </Text>
             <Text style={estilos.bannerSubtitle}> DE DESCUENTO </Text>
-            <Boton titulo="Comprar ahora" color="#FFFFFF" textColor="black" width={160} height={40} style={{ marginTop: 10,  }} onPress={() => { router.push("/cap-presentation/Views/Productos"); }} />
+            <Boton titulo="Comprar ahora" color="#FFFFFF" textColor="black" width={160} height={40} style={{ marginTop: 10,  }} onPress={() => { router.push("/cap-presentation/Views/cliente/Productos"); }} />
           </View>
 
           <View style={estilos.bannerIcon} >
@@ -252,7 +252,8 @@ const { carrito } = useContext(CartContext);
         {/* CATEGORÍAS */}
         <View style={estilos.sectionHeader}>
           <Text style={estilos.sectionTitle}> Categorías </Text>
-          <Boton titulo="Ver todas" color="transparent" textColor="#FFFFFF" width={80} height={40} style={{ marginLeft: "auto" }} onPress={() => { router.push("/cap-presentation/Views/Categorias"); }} />
+          <Boton titulo="Ver todas" color="transparent" textColor="#FFFFFF" width={80} height={40} style={{ marginLeft: "auto" }} 
+          onPress={() => { router.push("/cap-presentation/Views/cliente/Categorias"); }} />
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={estilos.categoriasScroll}>
@@ -296,7 +297,8 @@ const { carrito } = useContext(CartContext);
 
             {productosMasVendidos.map((producto) => (
 
-                <Pressable key={producto.id_producto} style={estilos.productCard} onPress={() => router.push({ pathname: "/cap-presentation/Views/DetalleProducto", params: { id: producto.id_producto, }, })}>
+                <Pressable key={producto.id_producto} style={estilos.productCard} onPress={() =>
+                 router.push({ pathname: "/cap-presentation/Views/cliente/DetalleProducto", params: { id: producto.id_producto, }, })}>
                   <View style={estilos.productImageContainer}>
                   <View style={estilos.badge}>
                     <Text style={estilos.badgeText}>Más vendido </Text>
@@ -342,7 +344,8 @@ const { carrito } = useContext(CartContext);
 
         <View style={estilos.sectionHeader}>
           <Text style={estilos.sectionTitle}> Productos </Text>
-          <Boton titulo="Ver más" color="transparent" textColor="#FFFFFF" width={80} height={40} style={{ marginLeft: "auto" }} onPress={() => { router.push("/cap-presentation/Views/Productos"); }} />
+          <Boton titulo="Ver más" color="transparent" textColor="#FFFFFF" width={80} height={40} style={{ marginLeft: "auto" }} 
+          onPress={() => { router.push("/cap-presentation/Views/cliente/Productos"); }} />
         </View>
 
         {cargando ? (
@@ -367,7 +370,7 @@ const { carrito } = useContext(CartContext);
   style={estilos.productCard}
   onPress={() =>
     router.push({
-      pathname: "/cap-presentation/Views/DetalleProducto",
+      pathname: "/cap-presentation/Views/cliente/DetalleProducto",
       params: {
         id: producto.id_producto,
       },

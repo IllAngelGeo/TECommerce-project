@@ -30,7 +30,7 @@ export default function NavegacionCliente({
           seccionActual === "inicio" && styles.botonActivo,
         ]}
         onPress={() =>
-          navegar("/cap-presentation/Views/Home")
+          navegar("/cap-presentation/Views/cliente/Home")
         }
       >
         <Ionicons
@@ -57,7 +57,7 @@ export default function NavegacionCliente({
           seccionActual === "productos" && styles.botonActivo,
         ]}
         onPress={() =>
-          navegar("/cap-presentation/Views/Productos")
+          navegar("/cap-presentation/Views/cliente/Productos")
         }
       >
         <Ionicons
@@ -84,7 +84,7 @@ export default function NavegacionCliente({
           seccionActual === "carrito" && styles.botonActivo,
         ]}
         onPress={() =>
-          navegar("/cap-presentation/Views/Carrito")
+          navegar("/cap-presentation/Views/cliente/Carrito")
         }
       >
         <Ionicons
@@ -109,7 +109,7 @@ export default function NavegacionCliente({
           seccionActual === "perfil" && styles.botonActivo,
         ]}
         onPress={() =>
-          navegar("/cap-presentation/Views/Perfil")
+          navegar("/cap-presentation/Views/cliente/Perfil")
         }
       >
         <Ionicons

@@ -7,6 +7,10 @@ import (
 	"ecommerce-backend/internal/carrito/repository"
 )
 
+// ==========================================
+// AGREGAR PRODUCTO AL CARRITO
+// ==========================================
+
 func AgregarCarrito(carrito *models.Carrito) error {
 
 	if carrito.IDUsuario == "" {
@@ -21,9 +25,23 @@ func AgregarCarrito(carrito *models.Carrito) error {
 		return errors.New("la cantidad debe ser mayor a cero")
 	}
 
-	return repository.AgregarProducto(carrito)
+	err := repository.AgregarProducto(carrito)
 
+	if err != nil {
+
+		if errors.Is(err, repository.ErrStockInsuficiente) {
+			return errors.New("no hay suficiente stock")
+		}
+
+		return err
+	}
+
+	return nil
 }
+
+// ==========================================
+// OBTENER CARRITO
+// ==========================================
 
 func ObtenerCarrito(idUsuario string) ([]models.Carrito, error) {
 
@@ -32,23 +50,49 @@ func ObtenerCarrito(idUsuario string) ([]models.Carrito, error) {
 	}
 
 	return repository.ObtenerCarrito(idUsuario)
-
 }
 
-func ActualizarCantidad(idCarrito string, cantidad int) error {
+// ==========================================
+// ACTUALIZAR CANTIDAD
+// ==========================================
+
+func ActualizarCantidad(
+	idCarrito string,
+	cantidad int,
+) error {
+
+	if idCarrito == "" {
+		return errors.New("id carrito vacío")
+	}
 
 	if cantidad <= 0 {
 		return errors.New("la cantidad debe ser mayor a cero")
 	}
 
-	return repository.ActualizarCantidad(
+	err := repository.ActualizarCantidad(
 		idCarrito,
 		cantidad,
 	)
 
+	if err != nil {
+
+		if errors.Is(err, repository.ErrStockInsuficiente) {
+			return errors.New("la cantidad supera el stock disponible")
+		}
+
+		return err
+	}
+
+	return nil
 }
 
-func EliminarCarrito(idCarrito string) error {
+// ==========================================
+// ELIMINAR PRODUCTO
+// ==========================================
+
+func EliminarCarrito(
+	idCarrito string,
+) error {
 
 	if idCarrito == "" {
 		return errors.New("id carrito vacío")
@@ -57,6 +101,4 @@ func EliminarCarrito(idCarrito string) error {
 	return repository.EliminarCarrito(
 		idCarrito,
 	)
-
 }
-

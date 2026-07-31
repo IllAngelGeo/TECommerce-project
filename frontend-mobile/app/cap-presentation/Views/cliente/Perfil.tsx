@@ -2,10 +2,10 @@ import React from "react";
 import { Pressable, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, Dimensions, } from "react-native";
 import { useEffect, useState } from "react";
 import {onAuthStateChanged, User, signOut,
-} from "firebase/auth";import { auth } from "../../firebase/firebase";
+} from "firebase/auth";import { auth } from "../../../firebase/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import NavegacionCliente from "../components/navegacioncliente";
+import NavegacionCliente from "../../components/navegacioncliente";
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -66,7 +66,7 @@ const cerrarSesion = async () => {
                 <Text style={estilos.userName}> {usuario?.displayName || "Usuario"} </Text>
             <Text style={estilos.userEmail}> {usuario?.email || "Sin correo electrónico"} </Text>
             
-             <Pressable onPress={() => router.push( "/cap-presentation/Views/EditarPerfil" ) } >
+             <Pressable onPress={() => router.push( "/cap-presentation/Views/cliente/EditarPerfil" ) } >
               <LinearGradient
                 colors={['#ededed', '#c2bfbf']}
                 style={estilos.editGradient}
@@ -91,32 +91,60 @@ const cerrarSesion = async () => {
               estilos.option,
               pressed && estilos.optionPressed,
             ]}
+          onPress={() =>
+    router.push("/cap-presentation/Views/cliente/Pedidos")
+  }
+
+
           >
             <View style={[estilos.optionIcon, { backgroundColor: '#6366f120' }]}>
               <Ionicons name="cart-outline" size={22} color="#6366f1" />
             </View>
             <View style={estilos.optionInfo}>
               <Text style={estilos.optionTitle}>Mis pedidos</Text>
-              <Text style={estilos.optionDescription}>Consulta tus compras y pedidos</Text>
+              <Text style={estilos.optionDescription}>Consulta tus pedidos</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#555555" />
           </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              estilos.option,
-              pressed && estilos.optionPressed,
-            ]}
-          >
-            <View style={[estilos.optionIcon, { backgroundColor: '#ec489920' }]}>
-              <Ionicons name="heart-outline" size={22} color="#ec4899" />
-            </View>
-            <View style={estilos.optionInfo}>
-              <Text style={estilos.optionTitle}>Mis favoritos</Text>
-              <Text style={estilos.optionDescription}>Productos que guardaste</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#555555" />
-          </Pressable>
+   <Pressable
+  style={({ pressed }) => [
+    estilos.option,
+    pressed && estilos.optionPressed,
+  ]}
+  onPress={() =>
+    router.push("/cap-presentation/Views/cliente/Favoritos")
+  }
+>
+  <View
+    style={[
+      estilos.optionIcon,
+      { backgroundColor: "#ec489920" },
+    ]}
+  >
+    <Ionicons
+      name="heart-outline"
+      size={22}
+      color="#ec4899"
+    />
+  </View>
+
+  <View style={estilos.optionInfo}>
+    <Text style={estilos.optionTitle}>
+      Mis favoritos
+    </Text>
+
+    <Text style={estilos.optionDescription}>
+      Productos que guardaste
+    </Text>
+  </View>
+
+  <Ionicons
+    name="chevron-forward"
+    size={20}
+    color="#555555"
+  />
+</Pressable>
 
           <Pressable
             style={({ pressed }) => [

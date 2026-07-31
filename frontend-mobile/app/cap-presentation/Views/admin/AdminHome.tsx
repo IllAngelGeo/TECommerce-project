@@ -1,26 +1,13 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ActivityIndicator,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-  Dimensions,
-  Animated,
-  Platform, Pressable
-} from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Dimensions, Animated, Platform, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MenuLateral from "../components/MenuLateral";
+import MenuLateral from "../../components/MenuLateral";
+import { API_URL } from "../../constants/api_url";
 
-
-const API_URL = "http://192.168.0.86:8080";
 const { width } = Dimensions.get("window");
 
 interface Producto {
@@ -262,7 +249,7 @@ const cargarNombreUsuario = async () => {
                       { text: "Cancelar", style: "cancel" },
                       { 
                         text: "Cerrar sesión", 
-                        onPress: () => router.replace("/cap-presentation/Views/Login") 
+                        onPress: () => router.replace("/cap-presentation/Views/auth/Login") 
                       },
                     ]
                   )

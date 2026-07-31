@@ -1,1 +1,1 @@
-export { default } from "./cap-presentation/Views/Login";
+export { default } from "./cap-presentation/Views/auth/Login";

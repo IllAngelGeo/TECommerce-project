@@ -3,10 +3,10 @@ import {ActivityIndicator,Animated,Image,Pressable,ScrollView,StyleSheet,Text,Vi
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import {useContext} from "react";
-import {CartContext} from "../../context/CartContext";
-import { API_URL } from "../constants/api_url";
+import {CartContext} from "../../../context/CartContext";
+import { API_URL } from "../../constants/api_url";
 import {Alert} from "react-native";
-import { auth } from "../../firebase/firebase";
+import { auth } from "../../../firebase/firebase";
 
 
 const { width } = Dimensions.get('window');
@@ -26,6 +26,8 @@ const insets = useSafeAreaInsets();
   const [imagenSeleccionada, setImagenSeleccionada] = useState(0);
   const {agregarCarrito}=useContext(CartContext);
   const usuario = auth.currentUser;
+const [cambiandoFavorito, setCambiandoFavorito] = useState(false);
+
 
   useEffect(() => {
   if (producto?.stock > 0) {
@@ -75,6 +77,7 @@ useEffect(() => {
   if (id) {
     obtenerProducto();
     obtenerImagenes();
+    verificarFavorito();
   }
 }, [id]);
 
@@ -104,6 +107,38 @@ useEffect(() => {
     }
   };
 
+const verificarFavorito = async () => {
+  try {
+    const usuario = auth.currentUser;
+
+    if (!usuario || !id) {
+      return;
+    }
+
+    const response = await fetch(
+      `${API_URL}/favoritos/firebase/${usuario.uid}`
+    );
+
+    if (!response.ok) {
+      throw new Error("No se pudieron obtener los favoritos");
+    }
+
+    const data = await response.json();
+
+    const existe = data.some(
+      (favorito: any) =>
+        String(favorito.id_producto) === String(id)
+    );
+
+    setEsFavorito(existe);
+
+    console.log("¿Es favorito?", existe);
+
+  } catch (error) {
+    console.error("Error verificando favorito:", error);
+  }
+};
+
   const formatearPrecio = (precio: number) => {
     return `$${Number(precio).toLocaleString("es-MX")}`;
   };
@@ -120,9 +155,96 @@ useEffect(() => {
     }
   };
 
-  const toggleFavorito = () => {
-    setEsFavorito(!esFavorito);
-  };
+const toggleFavorito = async () => {
+  try {
+    const usuario = auth.currentUser;
+
+    if (!usuario || !id || cambiandoFavorito) {
+      return;
+    }
+
+    setCambiandoFavorito(true);
+
+    const idProducto = String(id);
+
+    // =========================
+    // ELIMINAR FAVORITO
+    // =========================
+
+    if (esFavorito) {
+      const response = await fetch(
+        `${API_URL}/favoritos/firebase/${usuario.uid}/producto/${idProducto}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        const texto = await response.text();
+
+        console.log(
+          "Error eliminando favorito:",
+          texto
+        );
+
+        return;
+      }
+
+      // Actualizamos la interfaz
+      setEsFavorito(false);
+
+      console.log("❤️ Favorito eliminado");
+
+      return;
+    }
+
+    // =========================
+    // AGREGAR FAVORITO
+    // =========================
+
+    const response = await fetch(
+      `${API_URL}/favoritos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_usuario: usuario.uid,
+          id_producto: idProducto,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const texto = await response.text();
+
+      console.log(
+        "Error agregando favorito:",
+        texto
+      );
+
+      return;
+    }
+
+    // Actualizamos la interfaz
+    setEsFavorito(true);
+
+    console.log("❤️ Favorito agregado");
+
+  } catch (error) {
+
+    console.error(
+      "Error cambiando favorito:",
+      error
+    );
+
+  } finally {
+
+    setCambiandoFavorito(false);
+
+  }
+};
 
 const obtenerImagenes = async () => {
   try {
@@ -401,19 +523,21 @@ const cambiarImagen = (index: number) => {
     ],
   }}
 >
-  <Pressable
-    style={({ pressed }) => [
-      estilos.favoritoButton,
-      pressed && estilos.buttonPressed,
-    ]}
-    onPress={toggleFavorito}
-  >
-    <Ionicons
-      name={esFavorito ? "heart" : "heart-outline"}
-      size={28}
-      color={esFavorito ? "#FFFFFF" : "#666666"}
-    />
-  </Pressable>
+<Pressable
+  style={({ pressed }) => [
+    estilos.favoritoButton,
+    pressed && estilos.buttonPressed,
+  ]}
+  onPress={toggleFavorito}
+  disabled={cambiandoFavorito}
+>
+  <Ionicons
+    name={esFavorito ? "heart" : "heart-outline"}
+    size={28}
+    color={esFavorito ? "#FFFFFF" : "#666666"}
+  />
+</Pressable>
+
 </Animated.View>
 
           </View>

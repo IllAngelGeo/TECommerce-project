@@ -11,7 +11,7 @@ import {
 } from "react";
 import {
   auth,
-} from "../../firebase/firebase";
+} from "../../../firebase/firebase";
 import {
   onAuthStateChanged,
 } from "firebase/auth";
