@@ -3,12 +3,13 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Imagen } from "../components/Imagen";
+import { Imagen } from "../../components/Imagen";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
-import { createUserWithEmailAndPassword } from "firebase/auth"; 
-import { auth } from "../../firebase/firebase";
+import { signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, } from "firebase/auth";
+import { auth } from "../../../firebase/firebase";
+import { API_URL } from "../../constants/api_url";
 
 
 export default function DevolverRegistro() {
@@ -23,6 +24,8 @@ export default function DevolverRegistro() {
     const [apellidoMaterno, setApellidoMaterno] = useState("");
     const [fechaTexto, setFechaTexto] = useState("");
     const [telefono, setTelefono] = useState(""); // NUEVO: estado para teléfono
+    const [dia, mes, anio] = fechaTexto.split("/");
+    const fechaNacimiento = `${anio}-${mes}-${dia}`;
     
     // Paso 2 - Datos de cuenta
     const [email, setEmail] = useState("");
@@ -124,19 +127,29 @@ const handleRegister = async () => {
     const telefonoLimpio = telefono.replace(/\D/g, "");
 
     // 1. Crear usuario en Firebase Authentication
-    const credencial = await createUserWithEmailAndPassword(
-      auth,
-      email.trim(),
-      password
-    );
+   const credencial = await createUserWithEmailAndPassword(
+  auth,
+  email.trim(),
+  password
+);
 
-    const uid = credencial.user.uid;
+const user = credencial.user;
 
-    console.log("UID FIREBASE:", uid);
+const uid = user.uid;
 
-    // 2. Enviar información a Go
-    const response = await fetch(
-      "http://192.168.0.86:8080/auth/register",
+// Guardar nombre completo en Firebase
+const nombreCompleto = `${nombre.trim()} ${apellidoPaterno.trim()} ${apellidoMaterno.trim()}`;
+
+await updateProfile(user, {
+  displayName: nombreCompleto,
+});
+
+console.log("UID FIREBASE:", uid);
+console.log("NOMBRE FIREBASE:", nombreCompleto);
+
+// 2. Enviar información a Go
+const response = await fetch(
+  `${API_URL}/auth/register`,
       {
         method: "POST",
         headers: {
@@ -149,6 +162,7 @@ const handleRegister = async () => {
           apellido_paterno: apellidoPaterno.trim(),
           apellido_materno: apellidoMaterno.trim(),
           telefono: telefonoLimpio,
+          fecha_nacimiento: fechaNacimiento,
           provider: "email",
         }),
       }
@@ -168,9 +182,11 @@ const handleRegister = async () => {
     }
 
     // 3. Registro terminado correctamente
-    console.log("REGISTRO COMPLETADO");
+console.log("REGISTRO COMPLETADO");
 
-    router.replace("/cap-presentation/Views/Login");
+await signOut(auth);
+
+router.replace("/cap-presentation/Views/auth/Login");
 
   } catch (error: any) {
     console.log("ERROR REGISTER:", error);
@@ -232,17 +248,17 @@ const handleRegister = async () => {
                                     <Text style={styles.stepTitle}>Datos personales</Text>
                                     
                                     <View style={styles.inputContainer}>
-                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1785478766/usuario_mwcnk1.png", }} style={{ width: 20, height: 20}}/> 
                                         <TextInput style={styles.input} placeholder="Nombre" placeholderTextColor="#6B7280" value={nombre} onChangeText={setNombre} autoCapitalize="words" />
                                     </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1785478766/usuario_mwcnk1.png", }} style={{ width: 20, height: 20}}/> 
                                         <TextInput style={styles.input} placeholder="Apellido paterno" placeholderTextColor="#6B7280" value={apellidoPaterno} onChangeText={setApellidoPaterno} autoCapitalize="words" />
                                     </View>
 
                                     <View style={styles.inputContainer}>
-                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1785478766/usuario_mwcnk1.png", }} style={{ width: 20, height: 20}}/> 
                                         <TextInput style={styles.input} placeholder="Apellido materno" placeholderTextColor="#6B7280" value={apellidoMaterno} onChangeText={setApellidoMaterno} autoCapitalize="words" />
                                     </View>
 
@@ -255,7 +271,7 @@ const handleRegister = async () => {
                                     </Pressable>
 
                                     <View style={styles.inputContainer}>
-                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/telefono_k2jkam.png", }} style={{ width: 20, height: 20}}/> 
+                                        <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1785480031/telefono_mn7qoo.png", }} style={{ width: 20, height: 20}}/> 
                                         <TextInput style={styles.input} placeholder="Teléfono (10 dígitos)" placeholderTextColor="#6B7280" value={telefono} onChangeText={handleTelefonoChange} keyboardType="phone-pad" maxLength={14}
                                         />
                                     </View>
@@ -347,7 +363,7 @@ const handleRegister = async () => {
                             {step === 1 && (
                                 <View style={styles.registerContainer}>
                                     <Text style={styles.registerText}>¿Ya tienes una cuenta? </Text>
-                                    <Pressable onPress={() => router.replace("/cap-presentation/Views/Login")}>
+                                    <Pressable onPress={() => router.replace("/cap-presentation/Views/auth/Login")}>
                                         <Text style={styles.registerLink}>Inicia sesión aquí</Text>
                                     </Pressable>
                                 </View>

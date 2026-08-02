@@ -1,10 +1,14 @@
 package service
 
 import (
+	"context"
 	"errors"
 
+	"ecommerce-backend/internal/cloudinary"
 	"ecommerce-backend/internal/productos/models"
 	"ecommerce-backend/internal/productos/repository"
+
+	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
 func CreateProduct(product *models.Producto) error {
@@ -77,9 +81,55 @@ func UpdateProduct(id string, product *models.Producto) error {
 
 func DeleteProduct(id string) error {
 
-	if id == "" {
-		return errors.New("el id del producto es obligatorio")
+	cld, err := cloudinary.GetCloudinary()
+
+	if err != nil {
+		return err
 	}
 
-	return repository.DeleteProduct(id)
+	// 1. Obtener imágenes
+	imagenes, err := repository.GetProductImages(id)
+
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	// 2. Borrar imágenes de Cloudinary
+	for _, imagen := range imagenes {
+
+		if imagen.PublicID != "" {
+
+			_, err := cld.Upload.Destroy(
+				ctx,
+				uploader.DestroyParams{
+					PublicID: imagen.PublicID,
+				},
+			)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// 3. Borrar imágenes de PostgreSQL
+	err = repository.DeleteAllProductImages(id)
+
+	if err != nil {
+		return err
+	}
+
+	// 4. Borrar inventario
+	err = repository.DeleteInventory(id)
+
+	if err != nil {
+		return err
+	}
+
+	// 5. Borrar producto
+	err = repository.DeleteProduct(id)
+
+	return err
 }

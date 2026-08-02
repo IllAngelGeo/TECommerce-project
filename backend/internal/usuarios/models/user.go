@@ -7,5 +7,7 @@ type User struct {
 	ApellidoPaterno string `json:"apellido_paterno"`
 	ApellidoMaterno string `json:"apellido_materno"`
 	Telefono        string `json:"telefono"`
+	FechaNacimiento string `json:"fecha_nacimiento"`
 	Provider        string `json:"provider"`
+	Rol             string `json:"rol"`
 }

@@ -4,14 +4,16 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {ActivityIndicator,Pressable,StyleSheet,Text,TextInput,useColorScheme,View,KeyboardAvoidingView,Platform,TouchableWithoutFeedback,Keyboard,Alert,} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Imagen } from "../components/Imagen";
-import {signInWithEmailAndPassword } from "firebase/auth"; 
-import {auth} from "../../firebase/firebase";
+import { Imagen } from "../../components/Imagen";
+import {onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth"; 
+import {auth} from "../../../firebase/firebase";
 import { useEffect } from "react";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { GoogleAuthProvider,signInWithCredential,} from "firebase/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { API_URL } from "../../constants/api_url";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -66,7 +68,7 @@ const idToken =
         );
 
         router.replace(
-          "/cap-presentation/Views/Home"
+          "/cap-presentation/Views/cliente/Home"
         );
 
       } catch (error) {
@@ -88,8 +90,18 @@ const idToken =
   autenticarGoogle();
 
 }, [response]);
- const handleLogin = async () => {
 
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    if (user) {
+      router.replace("/cap-presentation/Views/cliente/Home");
+    }
+  });
+
+  return unsubscribe;
+}, []);
+
+const handleLogin = async () => {
   setMensaje("");
 
   if (!usuario || !password) {
@@ -98,16 +110,49 @@ const idToken =
   }
 
   try {
-
     setCargando(true);
 
-    await signInWithEmailAndPassword(
+    // Iniciar sesión en Firebase
+    const userCredential = await signInWithEmailAndPassword(
       auth,
       usuario,
       password
     );
 
-    router.replace("/cap-presentation/Views/Home");
+    // Obtener ID de Firebase
+    const firebaseId = userCredential.user.uid;
+
+    console.log("Firebase ID:", firebaseId);
+
+    // Consultar usuario en nuestro backend
+    const response = await fetch(
+      `${API_URL}/usuarios/firebase/${firebaseId}`
+    );
+
+    const data = await response.json();
+
+    await AsyncStorage.setItem( "nombreUsuario", data.nombre );
+    console.log("Usuario:", data);
+
+    if (!response.ok) {
+      setMensaje(data.error || "No se pudo obtener el usuario");
+      return;
+    }
+
+    // Revisar el rol
+    if (data.rol === "admin") {
+
+      router.replace(
+        "/cap-presentation/Views/admin/AdminHome"
+      );
+
+    } else {
+
+      router.replace(
+        "/cap-presentation/Views/cliente/Home"
+      );
+
+    }
 
   } catch (error: any) {
 
@@ -115,14 +160,13 @@ const idToken =
 
     if (error.code === "auth/user-not-found") {
       setMensaje("Usuario no encontrado");
-    } else if (
-      error.code === "auth/wrong-password"
-    ) {
+
+    } else if (error.code === "auth/wrong-password") {
       setMensaje("Contraseña incorrecta");
-    } else if (
-      error.code === "auth/invalid-credential"
-    ) {
+
+    } else if (error.code === "auth/invalid-credential") {
       setMensaje("Credenciales inválidas");
+
     } else {
       setMensaje("Error al iniciar sesión");
     }
@@ -202,7 +246,7 @@ const handleForgotPassword = async () => {
 
             {/* Campos de entrada */}
             <View style={styles.inputContainer}>
-             <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png", }} style={{ width: 20, height: 20}}/> 
+             <Imagen source={{ uri: "https://res.cloudinary.com/demobew9m/image/upload/v1785478766/usuario_mwcnk1.png", }} style={{ width: 20, height: 20}}/> 
              <TextInput style={styles.input} placeholder="Usuario o correo electrónico" placeholderTextColor="#6B7280" value={usuario} onChangeText={setUsuario} autoCapitalize="none" autoCorrect={false} />
             </View>
 
@@ -254,7 +298,7 @@ const handleForgotPassword = async () => {
 {/* Registro */}
 <View style={styles.registerContainer}>
   <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-  <Pressable onPress={() => router.replace("/cap-presentation/Views/Registrate")}>
+  <Pressable onPress={() => router.replace("/cap-presentation/Views/auth/Registrate")}>
     <Text style={styles.registerLink}>Regístrate ahora</Text>
   </Pressable>
 </View>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { auth } from "../../../firebase/firebase";
 import {
-  ActivityIndicator,
   Image,
   Pressable,
   RefreshControl,
@@ -13,10 +13,12 @@ import {
   Dimensions,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { API_URL } from "../constants/api_url";
+import { API_URL } from "../../constants/api_url";
+import NavegacionCliente from "../../components/navegacioncliente";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -51,12 +53,15 @@ export default function Productos() {
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [favoritos, setFavoritos] = useState<string[]>([]);
+  
   const productosPorPagina = 6;
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
+useEffect(() => {
+  cargarDatos();
+  cargarFavoritos();
+}, []);
+
 
   const cargarDatos = async () => {
     try {
@@ -93,6 +98,113 @@ export default function Productos() {
       setRefrescando(false);
     }
   };
+
+const cargarFavoritos = async () => {
+  try {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      console.log("No hay usuario autenticado");
+      return;
+    }
+
+    const response = await fetch(
+      `${API_URL}/favoritos/firebase/${usuario.uid}`
+    );
+
+    if (!response.ok) {
+      throw new Error("No se pudieron obtener los favoritos");
+    }
+
+    const data = await response.json();
+
+    const idsFavoritos = data.map(
+      (favorito: any) => favorito.id_producto
+    );
+
+    setFavoritos(idsFavoritos);
+
+    console.log("Favoritos:", idsFavoritos);
+
+  } catch (error) {
+    console.error("Error cargando favoritos:", error);
+  }
+};
+
+const cambiarFavorito = async (producto: Producto) => {
+  try {
+    const usuario = auth.currentUser;
+
+    if (!usuario) {
+      console.log("No hay usuario autenticado");
+      return;
+    }
+
+    const idProducto = String(producto.id_producto);
+
+    const esFavorito = favoritos.includes(idProducto);
+
+    // =========================
+    // ELIMINAR DE FAVORITOS
+    // =========================
+    if (esFavorito) {
+      const response = await fetch(
+        `${API_URL}/favoritos/firebase/${usuario.uid}/producto/${idProducto}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Error eliminando favorito:", data);
+        return;
+      }
+
+      setFavoritos((actuales) =>
+        actuales.filter((id) => id !== idProducto)
+      );
+
+      console.log("Favorito eliminado");
+      return;
+    }
+
+    // =========================
+    // AGREGAR A FAVORITOS
+    // =========================
+    const response = await fetch(
+      `${API_URL}/favoritos`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_usuario: usuario.uid,
+          id_producto: idProducto,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.log("Error agregando favorito:", data);
+      return;
+    }
+
+    setFavoritos((actuales) => [
+      ...actuales,
+      idProducto,
+    ]);
+
+    console.log("Favorito agregado");
+
+  } catch (error) {
+    console.error("Error cambiando favorito:", error);
+  }
+};
 
   const productosFiltrados = useMemo(() => {
     const texto = busqueda.toLowerCase().trim();
@@ -141,20 +253,7 @@ export default function Productos() {
     return categoria?.nombre || "Sin categoría";
   }, [categorias]);
 
-  if (cargando) {
-    return (
-      <SafeAreaView style={estilos.safe} >
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
-        <View style={estilos.centerContainer}>
-          <View style={estilos.loadingIcon}>
-            <ActivityIndicator size="large" color="#FFFFFF" />
-          </View>
-          <Text style={estilos.loadingText}>Cargando productos</Text>
-          <Text style={estilos.loadingSubtext}>Un momento, por favor...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+ 
 
   if (error) {
     return (
@@ -181,13 +280,7 @@ export default function Productos() {
 
       {/* HEADER CON PADDING SUPERIOR */}
       <View style={estilos.header}>
-        <Pressable
-          style={({ pressed }) => [estilos.backButton, pressed && estilos.buttonPressed]}
-          onPress={() => router.replace("/cap-presentation/Views/Home")}
-        >
-          <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-        </Pressable>
-
+       
         <View style={estilos.headerTitleContainer}>
           <Text style={estilos.headerTitle}>Productos</Text>
         </View>
@@ -277,9 +370,16 @@ export default function Productos() {
           ))}
         </ScrollView>
 
-        {/* PRODUCTOS */}
-        {productosPagina.length === 0 ? (
-          <View style={estilos.emptyContainer}>
+       {/* PRODUCTOS */}
+{cargando ? (
+  <View style={estilos.loadingProducts}>
+    <ActivityIndicator size="large" color="#FFFFFF" />
+    <Text style={estilos.loadingProductsText}>
+      Cargando productos...
+    </Text>
+  </View>
+) : productosPagina.length === 0 ? (
+  <View style={estilos.emptyContainer}>
             <Ionicons name="search-outline" size={60} color="#333333" />
             <Text style={estilos.emptyTitle}>No encontramos productos</Text>
             <Text style={estilos.emptyText}>
@@ -301,9 +401,14 @@ export default function Productos() {
                   estilos.productCard,
                   pressed && estilos.productCardPressed,
                 ]}
-                onPress={() => {
-                }}
-              >
+              onPress={() =>
+  router.push({
+    pathname: "/cap-presentation/Views/cliente/DetalleProducto",
+    params: {
+      id: producto.id_producto,
+    },
+  })
+}              >
                 <View style={estilos.imageContainer}>
                   {producto.destacado && (
                     <View style={estilos.badge}>
@@ -317,9 +422,23 @@ export default function Productos() {
                     </View>
                   )}
 
-                  <Pressable style={estilos.favoriteButton}>
-                    <Ionicons name="heart-outline" size={18} color="#FFFFFF" />
-                  </Pressable>
+  <Pressable
+  style={estilos.favoriteButton}
+  onPress={(event) => {
+    event.stopPropagation();
+    cambiarFavorito(producto);
+  }}
+>
+  <Ionicons
+    name={
+      favoritos.includes(String(producto.id_producto))
+        ? "heart"
+        : "heart-outline"
+    }
+    size={18}
+    color="#FFFFFF"
+  />
+</Pressable>
 
                   {producto.imagen ? (
                     <Image
@@ -413,6 +532,9 @@ export default function Productos() {
 
         <View style={estilos.footerSpace} />
       </ScrollView>
+<NavegacionCliente seccionActual="productos" />
+
+
     </SafeAreaView>
   );
 }
@@ -657,7 +779,7 @@ const estilos = StyleSheet.create({
 
   imageContainer: {
     height: 180,
-    backgroundColor: "#151515",
+    backgroundColor: "#fefbfb",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#2D2D2D",
@@ -676,7 +798,7 @@ const estilos = StyleSheet.create({
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#d7d4d4",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -917,4 +1039,17 @@ const estilos = StyleSheet.create({
   footerSpace: {
     height: 20,
   },
+
+  loadingProducts: {
+  alignItems: "center",
+  justifyContent: "center",
+  paddingVertical: 50,
+},
+
+loadingProductsText: {
+  color: "#777777",
+  fontSize: 13,
+  marginTop: 12,
+},
+
 });
