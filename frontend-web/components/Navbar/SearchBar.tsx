@@ -61,7 +61,7 @@ console.log("🔥 SearchBar renderizado");
           productosFiltrados.map((producto) => (
             <div
               key={producto.id_producto}
-              className="cursor-pointer border-b p-3 hover:bg-gray-100"
+              className="cursor-pointer rounded-lg border-b p-3 hover:bg-gray-300 hover:text-black hover:shadow-lg "
             >
               {producto.nombre}
             </div>
