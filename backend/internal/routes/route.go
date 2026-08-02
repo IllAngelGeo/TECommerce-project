@@ -7,6 +7,7 @@ import (
 	categoriasControllers "ecommerce-backend/internal/categorias/controller"
 	direccionesControllers "ecommerce-backend/internal/direcciones/controller"
 	favoritosControllers "ecommerce-backend/internal/favoritos/controller"
+	paypalControllers "ecommerce-backend/internal/paypal"
 	pedidoControllers "ecommerce-backend/internal/pedido/controller"
 	productosControllers "ecommerce-backend/internal/productos/controllers"
 	usuariosControllers "ecommerce-backend/internal/usuarios/controllers"
@@ -246,6 +247,31 @@ func SetupRoutes(r *gin.Engine) {
 				"/:id_direccion",
 				direccionesControllers.EliminarDireccion,
 			)
+		}
+
+		// Paypal
+		paypal := r.Group("/paypal")
+		{
+			paypal.GET(
+				"/test",
+				paypalControllers.TestConnection,
+			)
+
+			paypal.POST(
+				"/create-order",
+				paypalControllers.CreateOrderController,
+			)
+
+			paypal.POST(
+				"/capture-order",
+				paypalControllers.CaptureOrderController,
+			)
+
+			paypal.GET(
+				"/success",
+				paypalControllers.Success,
+			)
+
 		}
 
 	}

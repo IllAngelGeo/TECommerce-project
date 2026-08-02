@@ -3,6 +3,8 @@ package models
 type Pedido struct {
 	IDPedido      string  `json:"id_pedido"`
 	IDUsuario     string  `json:"id_usuario"`
+	IDDireccion   string  `json:"id_direccion"`
+	MetodoPago    string  `json:"metodo_pago"`
 	Total         float64 `json:"total"`
 	Estado        string  `json:"estado"`
 	FechaCreacion string  `json:"fecha_creacion"`
