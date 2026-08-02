@@ -142,39 +142,145 @@ export default function MetodoPago() {
   // CONTINUAR
   // ==========================================
 
-  const continuar = () => {
-    if (!direccion) {
-      Alert.alert(
-        "Dirección requerida",
-        "No se encontró la dirección seleccionada."
-      );
-      return;
+const continuar = async () => {
+  if (!usuario) {
+    Alert.alert(
+      "Sesión requerida",
+      "Debes iniciar sesión para realizar la compra."
+    );
+    return;
+  }
+
+  if (!direccion) {
+    Alert.alert(
+      "Dirección requerida",
+      "No se encontró la dirección seleccionada."
+    );
+    return;
+  }
+
+  if (!metodoPago) {
+    Alert.alert(
+      "Método de pago",
+      "Selecciona un método de pago para continuar."
+    );
+    return;
+  }
+
+  // ==========================================
+  // TARJETA
+  // ==========================================
+
+  if (metodoPago === "tarjeta") {
+    Alert.alert(
+      "Pago con tarjeta",
+      "La integración del pago con tarjeta se realizará antes de crear el pedido."
+    );
+
+    return;
+  }
+
+  // ==========================================
+  // EFECTIVO
+  // ==========================================
+
+  try {
+    setProcesando(true);
+
+    const response = await fetch(
+      `${API_URL}/pedidos/firebase/${usuario.uid}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id_direccion: direccion.id_direccion,
+          metodo_pago: metodoPago,
+        }),
+      }
+    );
+
+    const texto = await response.text();
+
+    console.log(
+      "RESPUESTA CREAR PEDIDO:",
+      texto
+    );
+
+    if (!response.ok) {
+      let mensaje =
+        "No se pudo crear el pedido.";
+
+      try {
+        const errorData =
+          JSON.parse(texto);
+
+        mensaje =
+          errorData.error || mensaje;
+
+        if (errorData.detalle) {
+          mensaje +=
+            `\n\n${errorData.detalle}`;
+        }
+
+      } catch {
+        // La respuesta no era JSON
+      }
+
+      throw new Error(mensaje);
     }
 
-    if (!metodoPago) {
-      Alert.alert(
-        "Método de pago",
-        "Selecciona un método de pago para continuar."
-      );
-      return;
-    }
+    const data = JSON.parse(texto);
 
-    /*
-     * Por ahora solamente enviamos
-     * la información a la siguiente pantalla.
-     *
-     * Después aquí podemos crear el pedido
-     * en el backend.
-     */
+    console.log(
+      "PEDIDO CREADO:",
+      data
+    );
 
-    router.push({
-      pathname: "/",
-      params: {
-        id_direccion: direccion.id_direccion,
-        metodo_pago: metodoPago,
-      },
-    });
-  };
+    Alert.alert(
+      "¡Pedido realizado! 🎉",
+      "Tu pedido se creó correctamente.",
+      [
+        {
+          text: "Ver pedido",
+          onPress: () => {
+
+            router.replace({
+              pathname:
+                "/cap-presentation/Views/cliente/DetallePedido" as any,
+
+              params: {
+                id_pedido:
+                  data.pedido.id_pedido,
+              },
+            });
+
+          },
+        },
+      ]
+    );
+
+  } catch (error) {
+
+    console.log(
+      "ERROR CREANDO PEDIDO:",
+      error
+    );
+
+    Alert.alert(
+      "Error",
+      error instanceof Error
+        ? error.message
+        : "No se pudo realizar el pedido."
+    );
+
+  } finally {
+
+    setProcesando(false);
+  }
+};
+
 
   // ==========================================
   // CARGANDO

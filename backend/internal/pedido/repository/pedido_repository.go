@@ -42,6 +42,8 @@ func ObtenerIDUsuarioFirebase(idFirebase string) (string, error) {
 
 func CrearPedido(
 	idUsuario string,
+	idDireccion string,
+	metodoPago string,
 ) (*models.Pedido, error) {
 
 	tx, err := database.DB.Begin()
@@ -165,24 +167,29 @@ func CrearPedido(
 	var idPedido string
 
 	queryPedido := `
-		INSERT INTO pedidos
-		(
-			id_usuario,
-			total,
-			estado
-		)
-		VALUES
-		(
-			$1,
-			$2,
-			'pendiente'
-		)
-		RETURNING id_pedido
-	`
-
+    INSERT INTO pedidos
+    (
+        id_usuario,
+        id_direccion,
+        metodo_pago,
+        total,
+        estado
+    )
+    VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        'pendiente'
+    )
+    RETURNING id_pedido
+`
 	err = tx.QueryRow(
 		queryPedido,
 		idUsuario,
+		idDireccion,
+		metodoPago,
 		total,
 	).Scan(&idPedido)
 
@@ -301,11 +308,13 @@ func CrearPedido(
 	// ======================================
 
 	pedido := &models.Pedido{
-		IDPedido:  idPedido,
-		IDUsuario: idUsuario,
-		Total:     total,
-		Estado:    "pendiente",
-		Detalles:  []models.PedidoDetalle{},
+		IDPedido:    idPedido,
+		IDUsuario:   idUsuario,
+		IDDireccion: idDireccion,
+		MetodoPago:  metodoPago,
+		Total:       total,
+		Estado:      "pendiente",
+		Detalles:    []models.PedidoDetalle{},
 	}
 
 	return pedido, nil
@@ -318,17 +327,18 @@ func CrearPedido(
 func ObtenerPedidos(idUsuario string) ([]models.Pedido, error) {
 
 	query := `
-		SELECT
-			id_pedido,
-			id_usuario,
-			total,
-			estado,
-			fecha_creacion
-		FROM pedidos
-		WHERE id_usuario = $1
-		ORDER BY fecha_creacion DESC
-	`
-
+    SELECT
+        id_pedido,
+        id_usuario,
+        id_direccion,
+        metodo_pago,
+        total,
+        estado,
+        fecha_creacion
+    FROM pedidos
+    WHERE id_usuario = $1
+    ORDER BY fecha_creacion DESC
+`
 	rows, err := database.DB.Query(
 		query,
 		idUsuario,
@@ -349,11 +359,12 @@ func ObtenerPedidos(idUsuario string) ([]models.Pedido, error) {
 		err := rows.Scan(
 			&pedido.IDPedido,
 			&pedido.IDUsuario,
+			&pedido.IDDireccion,
+			&pedido.MetodoPago,
 			&pedido.Total,
 			&pedido.Estado,
 			&pedido.FechaCreacion,
 		)
-
 		if err != nil {
 			return nil, err
 		}

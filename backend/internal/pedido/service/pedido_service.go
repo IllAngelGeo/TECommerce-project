@@ -13,13 +13,52 @@ import (
 
 func CrearPedido(
 	idFirebase string,
+	idDireccion string,
+	metodoPago string,
 ) (*models.Pedido, error) {
 
+	// ======================================
+	// VALIDAR FIREBASE
+	// ======================================
+
 	if idFirebase == "" {
-		return nil, errors.New("id firebase obligatorio")
+		return nil, errors.New(
+			"id firebase obligatorio",
+		)
 	}
 
-	// Obtener el usuario real de PostgreSQL
+	// ======================================
+	// VALIDAR DIRECCIÓN
+	// ======================================
+
+	if idDireccion == "" {
+		return nil, errors.New(
+			"id direccion obligatorio",
+		)
+	}
+
+	// ======================================
+	// VALIDAR MÉTODO DE PAGO
+	// ======================================
+
+	if metodoPago == "" {
+		return nil, errors.New(
+			"metodo de pago obligatorio",
+		)
+	}
+
+	if metodoPago != "efectivo" &&
+		metodoPago != "tarjeta" {
+
+		return nil, errors.New(
+			"metodo de pago no válido",
+		)
+	}
+
+	// ======================================
+	// OBTENER USUARIO REAL
+	// ======================================
+
 	idUsuario, err :=
 		repository.ObtenerIDUsuarioFirebase(
 			idFirebase,
@@ -31,9 +70,16 @@ func CrearPedido(
 		)
 	}
 
-	// Crear pedido
+	// ======================================
+	// CREAR PEDIDO
+	// ======================================
+
 	pedido, err :=
-		repository.CrearPedido(idUsuario)
+		repository.CrearPedido(
+			idUsuario,
+			idDireccion,
+			metodoPago,
+		)
 
 	if err != nil {
 		return nil, err
@@ -56,6 +102,10 @@ func ObtenerPedidos(
 		)
 	}
 
+	// ======================================
+	// OBTENER USUARIO
+	// ======================================
+
 	idUsuario, err :=
 		repository.ObtenerIDUsuarioFirebase(
 			idFirebase,
@@ -66,6 +116,10 @@ func ObtenerPedidos(
 			"usuario no encontrado",
 		)
 	}
+
+	// ======================================
+	// OBTENER PEDIDOS
+	// ======================================
 
 	return repository.ObtenerPedidos(
 		idUsuario,
