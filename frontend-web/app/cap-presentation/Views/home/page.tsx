@@ -6,6 +6,7 @@ import type { Categoria } from "@/types/Categoria";
 import { obtenerCategorias } from "@/services/Categoria_Service";
 import { obtenerProductos } from "@/services/Productos_Service";
 import { Productos } from "@/types/Productos";
+import Link from "next/link";
 
   export default function Home() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -118,24 +119,31 @@ import { Productos } from "@/types/Productos";
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
   {productos
-    .filter((productos) => productos.activo)
-    .map((productos) => (
-      <div
-        key={productos.id_producto}
+    .filter((producto) => producto.activo)
+    .map((producto) => (
+      <Link
+        key={producto.id_producto}
+        href={`/productos/${producto.id_producto}`}
         className="group cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:-translate-y-1 hover:bg-white/10"
       >
-        <div className="mb-4 text-4xl"><img src={productos.imagen} alt="" className="w-full h-48 object-contain" /></div>
+        <div className="mb-4 text-4xl">
+          <img
+            src={producto.imagen}
+            alt={producto.nombre}
+            className="h-48 w-full object-contain"
+          />
+        </div>
 
         <h3 className="font-semibold">
-          {productos.nombre}
+          {producto.nombre}
         </h3>
 
         <p className="mt-1 text-sm text-gray-400">
-          {productos.descripcion}
+          {producto.descripcion}
         </p>
-      </div>
+      </Link>
     ))}
 </div>
         

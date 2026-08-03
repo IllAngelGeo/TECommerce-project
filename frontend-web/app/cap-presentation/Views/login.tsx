@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { loginGoogle } from "../../firebase/firebase";
+import { loginGoogle, loginUser } from "../../firebase/firebase";
 
 
 export default function Home() {
@@ -18,14 +18,37 @@ export default function Home() {
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
+
+  try {
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log("Login:", { username, password, rememberMe });
-    }, 1500);
-  };
+    const result = await loginUser(username, password);
+
+    console.log("Usuario autenticado:", result.user);
+    console.log("UID Firebase:", result.user.uid);
+
+    router.push("/cap-presentation/Views/home");
+
+  } catch (error: any) {
+    console.error("ERROR LOGIN:", error);
+
+    if (error.code === "auth/invalid-credential") {
+      alert("Correo o contraseña incorrectos");
+    } else if (error.code === "auth/user-not-found") {
+      alert("No existe una cuenta con ese correo");
+    } else if (error.code === "auth/wrong-password") {
+      alert("Contraseña incorrecta");
+    } else if (error.code === "auth/invalid-email") {
+      alert("El correo no es válido");
+    } else {
+      alert("Error al iniciar sesión");
+    }
+
+  } finally {
+    setIsLoading(false);
+  }
+};    
 
 
   const handleGoogleLogin = async () => {
@@ -159,7 +182,7 @@ export default function Home() {
                   type="button"
                   onClick={() => {
                     console.log("Intentando navegar");
-                    router.push(" /registrate");
+                    router.push("/cap-presentation/Views/registrate");
                   }}
                 >
                   Regístrate ahora

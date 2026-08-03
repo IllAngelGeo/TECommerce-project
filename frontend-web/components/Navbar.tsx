@@ -1,9 +1,9 @@
-import Logo from "./Logo";
-import DesktopMenu from "./DesktopMenu";
+import Logo from "./Navbar/Logo";
+import DesktopMenu from "./Navbar/DesktopMenu";
 import SearchBar from "./Navbar/SearchBar";
-import LoginButton from "./LoginButton";
+import LoginButton from "./Navbar/LoginButton";
 import MobileMenu from "./MobileMenu";
-import CartButton from "./CartButton";
+import CartButton from "./Navbar/CartButton";
 
 export default function Navbar() {
   return (
