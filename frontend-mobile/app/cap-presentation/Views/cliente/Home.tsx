@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {   useEffect, useMemo, useState, useContext, useRef } from "react";
+import TerminosCondicionesModal from "../cliente/TerminosCondiciones";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,7 +7,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../constants/api_url";
 import { Boton } from "../../../components/botones";
 import NavegacionCliente from  "../../../components/navegacioncliente"
-import { useContext } from "react";
 import { CartContext } from "../../../context/CartContext";
 
 export default function DevolverHome() {
@@ -16,19 +16,28 @@ const { carrito } = useContext(CartContext);
 
   // ESTADOS
   const [productos, setProductos] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [bannerActual, setBannerActual] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [precioMaximo, setPrecioMaximo] = useState("");
   const [ordenPrecio, setOrdenPrecio] = useState<"ninguno" | "menor" | "mayor">("ninguno");
+const bannerScroll = useRef<ScrollView>(null);
+const mezclarProductos = (array:any[]) => {
+  return [...array].sort(() => Math.random() - 0.5);
+};const [productosAleatorios, setProductosAleatorios] = useState<any[]>([]);
 
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(0);
 
-  useEffect(() => {
-    obtenerProductos();
-    obtenerCategorias();
-  }, []);
+useEffect(() => {
+
+  obtenerProductos();
+  obtenerCategorias();
+  obtenerBanners();
+
+}, []);
 
   // RECIBIR CATEGORÍA DESDE CATEGORIAS.TSX
 
@@ -40,6 +49,40 @@ const { carrito } = useContext(CartContext);
     }
   }, [categoria]);
 
+useEffect(() => {
+
+  if(banners.length <= 1)
+    return;
+
+
+  const intervalo = setInterval(()=>{
+
+    setBannerActual((prev)=>{
+
+      const siguiente =
+        prev === banners.length - 1
+        ? 0
+        : prev + 1;
+
+
+      bannerScroll.current?.scrollTo({
+        x: siguiente * 335,
+        animated:true
+      });
+
+
+      return siguiente;
+
+    });
+
+
+  },4000);
+
+
+  return () => clearInterval(intervalo);
+
+
+},[banners]);
   // OBTENER PRODUCTOS
 
   const obtenerProductos = async () => {
@@ -115,8 +158,47 @@ const { carrito } = useContext(CartContext);
     }
   };
 
+// OBTENER BANNERS
+
+const obtenerBanners = async () => {
+
+  try {
+
+    const response = await fetch(
+      `${API_URL}/banners`
+    );
+
+
+    const data = await response.json();
+
+
+    if(response.ok){
+
+      setBanners(
+        data.filter(
+          (banner:any)=> banner.activo
+        )
+      );
+
+    }
+
+
+  } catch(error){
+
+    console.error(
+      "Error obteniendo banners:",
+      error
+    );
+
+  }
+
+};
+
   // FILTRAR PRODUCTOS
-  const productosFiltrados = productos.filter((producto) => {
+ const productosFiltrados = useMemo(() => {
+
+  return productos.filter((producto) => {
+
     const textoBusqueda = busqueda.toLowerCase().trim();
 
     const coincideBusqueda =
@@ -124,28 +206,88 @@ const { carrito } = useContext(CartContext);
       producto.modelo?.toLowerCase().includes(textoBusqueda) ||
       producto.descripcion?.toLowerCase().includes(textoBusqueda);
 
-    const coincideCategoria = categoriaSeleccionada === 0 || producto.id_categoria === categoriaSeleccionada;
 
-    const precioProducto = producto.precio_oferta ?? producto.precio;
+    const coincideCategoria =
+      categoriaSeleccionada === 0 ||
+      producto.id_categoria === categoriaSeleccionada;
 
-    const coincidePrecio = precioMaximo === "" || precioProducto <= Number(precioMaximo);
 
-    return coincideBusqueda && coincideCategoria && coincidePrecio;
+    const precioProducto =
+      producto.precio_oferta ?? producto.precio;
+
+
+    const coincidePrecio =
+      precioMaximo === "" ||
+      precioProducto <= Number(precioMaximo);
+
+
+    return (
+      coincideBusqueda &&
+      coincideCategoria &&
+      coincidePrecio
+    );
+
   })
+  .sort((a,b)=>{
 
-    .sort((a, b) => {
-      const precioA = a.precio_oferta ?? a.precio;
-      const precioB = b.precio_oferta ?? b.precio;
+    const precioA =
+      a.precio_oferta ?? a.precio;
 
-      if (ordenPrecio === "menor") {
-        return precioA - precioB;
-      }
-      if (ordenPrecio === "mayor") {
-        return precioB - precioA;
-      }
+    const precioB =
+      b.precio_oferta ?? b.precio;
 
-      return 0;
-    });
+
+    if(ordenPrecio==="menor"){
+      return precioA - precioB;
+    }
+
+
+    if(ordenPrecio==="mayor"){
+      return precioB - precioA;
+    }
+
+
+    return 0;
+
+  });
+
+
+},[
+  productos,
+  busqueda,
+  categoriaSeleccionada,
+  precioMaximo,
+  ordenPrecio
+]);
+
+useEffect(() => {
+
+  if(productosFiltrados.length === 0){
+    setProductosAleatorios([]);
+    return;
+  }
+
+
+  // primera carga aleatoria
+  setProductosAleatorios(
+    mezclarProductos(productosFiltrados)
+  );
+
+
+  // cambiar orden cada 30 segundos
+  const intervalo = setInterval(()=>{
+
+    setProductosAleatorios(
+      mezclarProductos(productosFiltrados)
+    );
+
+  },30000);
+
+
+  return () => clearInterval(intervalo);
+
+
+},[productosFiltrados]);
 
   // PRODUCTOS DESTACADOS
 
@@ -213,14 +355,6 @@ const { carrito } = useContext(CartContext);
   </Pressable>
 
 
-  <Pressable style={estilos.iconButton}>
-    <Ionicons 
-      name="notifications-outline" 
-      size={23} 
-      color="#FFFFFF" 
-    />
-  </Pressable>
-
 
 </View>
         </View>
@@ -235,19 +369,109 @@ const { carrito } = useContext(CartContext);
           </Pressable>
         </View>
 
-        {/* BANNER  */}
-        <View style={estilos.banner}>
-          <View style={estilos.bannerTextContainer} >
-            <Text style={estilos.bannerSmall} > OFERTA ESPECIAL </Text>
-            <Text style={estilos.bannerTitle} > HASTA 30% </Text>
-            <Text style={estilos.bannerSubtitle}> DE DESCUENTO </Text>
-            <Boton titulo="Comprar ahora" color="#FFFFFF" textColor="black" width={160} height={40} style={{ marginTop: 10,  }} onPress={() => { router.push("/cap-presentation/Views/cliente/Productos"); }} />
+{/* CARRUSEL DE BANNERS */}
+
+{
+  banners.length > 0 && (
+
+   <ScrollView
+ref={bannerScroll}
+horizontal
+pagingEnabled
+showsHorizontalScrollIndicator={false}
+style={{ marginBottom:25 }}
+>
+
+      {
+        banners.map((banner, index) => (
+
+          <View
+            key={banner.id_banner}
+            style={estilos.banner}
+          >
+
+            <View style={estilos.bannerTextContainer}>
+
+              <Text style={estilos.bannerTitle}>
+                {banner.titulo}
+              </Text>
+
+
+              <Text style={estilos.bannerSmall}>
+                {banner.subtitulo}
+              </Text>
+
+
+
+
+
+<Boton
+  titulo={banner.texto_boton}
+  color="#FFFFFF"
+  textColor="black"
+    fontWeight="bold"
+
+  width={160}
+  height={40}
+  style={{
+    
+    marginTop:10
+  }}
+  onPress={() =>
+    router.push(
+      "/cap-presentation/Views/cliente/Productos"
+    )
+  }
+/>
+
+            </View>
+
+
+
+            <View style={estilos.bannerIcon}>
+
+
+              {
+                banner.imagen_url ? (
+
+                  <Image
+                    source={{
+                      uri: banner.imagen_url
+                    }}
+
+                            style={estilos.bannerImage} // ← USAR EL NUEVO ESTILO
+
+                    resizeMode="cover"
+
+                  />
+
+
+                ):(
+
+                  <Ionicons
+                    name="image-outline"
+                    size={80}
+                    color="#FFFFFF"
+                  />
+
+                )
+              }
+
+
+            </View>
+
+
           </View>
 
-          <View style={estilos.bannerIcon} >
-            <Ionicons name="bag-handle-outline" size={80} color="#FFFFFF" />
-          </View>
-        </View>
+
+        ))
+      }
+
+
+    </ScrollView>
+
+  )
+}
 
         {/* CATEGORÍAS */}
         <View style={estilos.sectionHeader}>
@@ -362,8 +586,8 @@ const { carrito } = useContext(CartContext);
         ) : (
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {productosFiltrados.map(
-              (producto) => (
+{productosAleatorios.map(
+                (producto) => (
 
              <Pressable
   key={producto.id_producto}
@@ -475,6 +699,12 @@ const { carrito } = useContext(CartContext);
 
       </ScrollView>
 
+
+      <TerminosCondicionesModal
+        onAccepted={() => {
+          console.log("Términos y condiciones aceptados");
+        }}
+      />
 
       {mostrarFiltros && (
         <View style={estilos.modalOverlay}>
@@ -701,16 +931,34 @@ const estilos = StyleSheet.create({
   // BANNER
   // ==========================================
 
-  banner: {
-    height: 165,
-    borderRadius: 18,
-    backgroundColor: "#1A1A1A",
-    borderWidth: 1,
-    borderColor: "#333333",
-    flexDirection: "row",
-    overflow: "hidden",
-    marginBottom: 25,
-  },
+banner: {
+  width: 320,
+  height: 175,
+  borderRadius: 18,
+  backgroundColor: "#1A1A1A",
+  borderWidth: 1,
+  borderColor: "#333333",
+  flexDirection: "row",
+  overflow: "hidden",
+  marginRight: 15,
+},
+
+bannerIcon: {
+  width: 120,
+  height: 175, // ← AHORA TIENE ALTURA FIJA
+  justifyContent: "center",
+  alignItems: "center",
+  overflow: "hidden", // ← PARA RECORTAR LA IMAGEN SI ES NECESARIO
+},
+
+// NUEVO ESTILO PARA LA IMAGEN DEL BANNER
+bannerImage: {
+  width: 100,
+  height: 100, 
+  borderRadius: 0,
+  marginRight: 11,
+  marginLeft: 5
+},
 
   bannerTextContainer: {
     flex: 1,
@@ -720,22 +968,25 @@ const estilos = StyleSheet.create({
 
   bannerSmall: {
     color: "#AAAAAA",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
-    letterSpacing: 1,
+    letterSpacing: 0,
+    marginTop: 5,
+    marginBottom: 5
   },
 
   bannerTitle: {
     color: "#FFFFFF",
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
     marginTop: 5,
   },
 
   bannerSubtitle: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
+ 
   },
 
   bannerButton: {
@@ -754,12 +1005,6 @@ const estilos = StyleSheet.create({
     color: "#000000",
     fontSize: 11,
     fontWeight: "bold",
-  },
-
-  bannerIcon: {
-    width: 120,
-    justifyContent: "center",
-    alignItems: "center",
   },
 
   // ==========================================
@@ -936,18 +1181,32 @@ const estilos = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.82)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingTop: 25,
+    paddingBottom: 110,
     zIndex: 100,
+    elevation: 20,
   },
 
   filtroModal: {
+    width: "100%",
+    maxWidth: 460,
     backgroundColor: "#151515",
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+    borderRadius: 25,
     padding: 22,
     borderWidth: 1,
     borderColor: "#333333",
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 12,
+    },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 22,
   },
 
   filtroHeader: {

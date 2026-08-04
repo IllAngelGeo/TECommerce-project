@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import MenuLateral from "../../../../components/MenuLateral";
 import {
   View,
   Text,
@@ -34,7 +35,7 @@ export default function CrudMarcas(){
 const [marcas,setMarcas]=useState<Marca[]>([]);
 const [cargando,setCargando]=useState(true);
 const [busqueda,setBusqueda]=useState("");
-
+const [menuVisible, setMenuVisible] = useState(false);
 
 
 useEffect(()=>{
@@ -232,15 +233,10 @@ const renderMarca=({item}:{item:Marca})=>(
 
 
 <View style={estilos.icono}>
-
-<Ionicons
-name="pricetag-outline"
-size={35}
-color="#FFFFFF"
-/>
-
+  <Text style={estilos.letraMarca}>
+    {item.nombre.charAt(0).toUpperCase()}
+  </Text>
 </View>
-
 
 
 <View style={estilos.info}>
@@ -393,13 +389,21 @@ return(
 
 <View style={estilos.header}>
 
+<Pressable
+  style={estilos.menuButton}
+  onPress={() => setMenuVisible(true)}
+>
+  <Ionicons
+    name="menu"
+    size={28}
+    color="#FFFFFF"
+  />
+</Pressable>
+
 
 <Text style={estilos.titulo}>
-
-Marcas
-
+  Marcas
 </Text>
-
 
 
 <Pressable
@@ -483,7 +487,11 @@ refreshing={cargando}
 
 />
 
-
+<MenuLateral
+  visible={menuVisible}
+  onClose={() => setMenuVisible(false)}
+  seccionActual="marcas"
+/>  
 
 </View>
 
@@ -619,7 +627,21 @@ flex:1,
 backgroundColor:"#000",
 justifyContent:"center",
 alignItems:"center"
-}
+},
 
+menuButton:{
+  width:45,
+  height:45,
+  borderRadius:12,
+  backgroundColor:"#1A1A1A",
+  justifyContent:"center",
+  alignItems:"center",
+},
+
+letraMarca:{
+  color:"#FFFFFF",
+  fontSize:28,
+  fontWeight:"bold"
+},
 
 });

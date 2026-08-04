@@ -31,6 +31,13 @@ interface PedidoDetalle {
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
+type EstadoEnvio = "pendiente" | "en_proceso" | "entregado";
+
+interface RespuestaDetallePedido {
+  detalles?: PedidoDetalle[];
+  estado_envio?: EstadoEnvio;
+}
+
 export default function DetallePedido() {
   const { id_pedido } = useLocalSearchParams<{
     id_pedido: string;
@@ -39,6 +46,7 @@ export default function DetallePedido() {
   const [detalles, setDetalles] = useState<PedidoDetalle[]>([]);
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
+  const [estadoEnvio, setEstadoEnvio] = useState<EstadoEnvio>("pendiente");
   const [animacion] = useState(new Animated.Value(0));
 
   useEffect(() => {
@@ -72,8 +80,16 @@ export default function DetallePedido() {
         throw new Error(texto);
       }
 
-      const data = JSON.parse(texto);
-      setDetalles(data);
+      const data = JSON.parse(texto) as PedidoDetalle[] | RespuestaDetallePedido;
+
+      if (Array.isArray(data)) {
+        setDetalles(data);
+        // Compatibilidad con el endpoint actual mientras no incluya el estado.
+        setEstadoEnvio("pendiente");
+      } else {
+        setDetalles(Array.isArray(data.detalles) ? data.detalles : []);
+        setEstadoEnvio(normalizarEstadoEnvio(data.estado_envio));
+      }
     } catch (error) {
       console.log("Error obteniendo detalles:", error);
     } finally {
@@ -86,6 +102,68 @@ export default function DetallePedido() {
     setRefrescando(true);
     obtenerDetalles(true);
   }, []);
+
+  const normalizarEstadoEnvio = (
+    estado?: string,
+  ): EstadoEnvio => {
+    const valor = estado?.toLowerCase().trim();
+
+    if (
+      valor === "en_proceso" ||
+      valor === "en proceso" ||
+      valor === "procesando"
+    ) {
+      return "en_proceso";
+    }
+
+    if (valor === "entregado" || valor === "completado") {
+      return "entregado";
+    }
+
+    return "pendiente";
+  };
+
+  const pasosEnvio: Array<{
+    id: EstadoEnvio;
+    titulo: string;
+    descripcion: string;
+    icono: IconName;
+  }> = [
+    {
+      id: "pendiente",
+      titulo: "Pendiente",
+      descripcion: "Pedido recibido",
+      icono: "time-outline",
+    },
+    {
+      id: "en_proceso",
+      titulo: "En proceso",
+      descripcion: "Preparando envío",
+      icono: "cube-outline",
+    },
+    {
+      id: "entregado",
+      titulo: "Entregado",
+      descripcion: "Pedido recibido",
+      icono: "checkmark-circle-outline",
+    },
+  ];
+
+  const indiceEstadoActual = pasosEnvio.findIndex(
+    (paso) => paso.id === estadoEnvio,
+  );
+
+  const etiquetaEstado =
+    estadoEnvio === "en_proceso"
+      ? "En proceso"
+      : estadoEnvio.charAt(0).toUpperCase() + estadoEnvio.slice(1);
+
+  const colorEstado =
+    estadoEnvio === "entregado"
+      ? "#4CAF50"
+      : estadoEnvio === "en_proceso"
+        ? "#F6BD60"
+        : "#AFAFAF";
 
   const formatearPrecio = (precio: number) => {
     return `$${precio.toLocaleString("es-MX", {
@@ -170,9 +248,129 @@ export default function DetallePedido() {
                 <Text style={styles.infoLabel}>Número de pedido</Text>
                 <Text style={styles.idPedido}>#{id_pedido?.slice(0, 8)}</Text>
               </View>
-              <View style={styles.estadoContainer}>
-                <View style={[styles.estadoPunto, { backgroundColor: "#4CAF50" }]} />
-                <Text style={styles.estado}>Activo</Text>
+              <View
+                style={[
+                  styles.estadoContainer,
+                  { backgroundColor: `${colorEstado}18` },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.estadoPunto,
+                    { backgroundColor: colorEstado },
+                  ]}
+                />
+                <Text style={[styles.estado, { color: colorEstado }]}>
+                  {etiquetaEstado}
+                </Text>
+              </View>
+            </Animated.View>
+
+            {/* SEGUIMIENTO DEL ENVÍO */}
+            <Animated.View
+              style={[
+                styles.seguimientoContainer,
+                { opacity: animacion },
+              ]}
+            >
+              <View style={styles.seguimientoHeader}>
+                <View style={styles.seguimientoHeaderIcon}>
+                  <Ionicons
+                    name="navigate-circle-outline"
+                    size={23}
+                    color="#FFF"
+                  />
+                </View>
+
+                <View style={styles.seguimientoHeaderTexto}>
+                  <Text style={styles.seguimientoTitulo}>
+                    Estado del envío
+                  </Text>
+                  <Text style={styles.seguimientoDescripcion}>
+                    Consulta el progreso actual de tu pedido
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.timeline}>
+                {pasosEnvio.map((paso, index) => {
+                  const completado = index <= indiceEstadoActual;
+                  const esActual = index === indiceEstadoActual;
+                  const colorPaso = completado ? colorEstado : "#3A3A3A";
+
+                  return (
+                    <View key={paso.id} style={styles.timelineItem}>
+                      <View style={styles.timelineIndicatorColumn}>
+                        <View
+                          style={[
+                            styles.timelineCircle,
+                            completado && {
+                              backgroundColor: colorPaso,
+                              borderColor: colorPaso,
+                            },
+                            esActual && styles.timelineCircleActual,
+                          ]}
+                        >
+                          <Ionicons
+                            name={
+                              completado
+                                ? paso.icono
+                                : "ellipse-outline"
+                            }
+                            size={18}
+                            color={completado ? "#000" : "#666"}
+                          />
+                        </View>
+
+                        {index < pasosEnvio.length - 1 ? (
+                          <View
+                            style={[
+                              styles.timelineLine,
+                              index < indiceEstadoActual && {
+                                backgroundColor: colorEstado,
+                              },
+                            ]}
+                          />
+                        ) : null}
+                      </View>
+
+                      <View style={styles.timelineContent}>
+                        <View style={styles.timelineTitleRow}>
+                          <Text
+                            style={[
+                              styles.timelineTitle,
+                              completado && { color: "#FFF" },
+                            ]}
+                          >
+                            {paso.titulo}
+                          </Text>
+
+                          {esActual ? (
+                            <View
+                              style={[
+                                styles.actualBadge,
+                                { backgroundColor: `${colorEstado}18` },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.actualBadgeText,
+                                  { color: colorEstado },
+                                ]}
+                              >
+                                ACTUAL
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+
+                        <Text style={styles.timelineDescription}>
+                          {paso.descripcion}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             </Animated.View>
 
@@ -377,9 +575,113 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   estado: {
-    color: "#4CAF50",
     fontSize: 12,
     fontWeight: "bold",
+  },
+  seguimientoContainer: {
+    backgroundColor: "#0A0A0A",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#1F1F1F",
+    padding: 17,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  seguimientoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  seguimientoHeaderIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  seguimientoHeaderTexto: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  seguimientoTitulo: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  seguimientoDescripcion: {
+    color: "#707070",
+    fontSize: 11,
+    marginTop: 3,
+  },
+  timeline: {
+    width: "100%",
+  },
+  timelineItem: {
+    flexDirection: "row",
+    minHeight: 70,
+  },
+  timelineIndicatorColumn: {
+    width: 44,
+    alignItems: "center",
+  },
+  timelineCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#151515",
+    borderWidth: 1,
+    borderColor: "#303030",
+  },
+  timelineCircleActual: {
+    shadowColor: "#FFF",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    minHeight: 30,
+    backgroundColor: "#292929",
+    marginVertical: 4,
+  },
+  timelineContent: {
+    flex: 1,
+    paddingLeft: 10,
+    paddingTop: 2,
+    paddingBottom: 18,
+  },
+  timelineTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  timelineTitle: {
+    color: "#666",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  timelineDescription: {
+    color: "#666",
+    fontSize: 11,
+    marginTop: 5,
+  },
+  actualBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginLeft: 8,
+  },
+  actualBadgeText: {
+    fontSize: 8,
+    fontWeight: "900",
+    letterSpacing: 0.8,
   },
   seccionTitulo: {
     color: "#FFF",

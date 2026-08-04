@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import MenuLateral from "../../../../components/MenuLateral";
 import {
   View,
   Text,
@@ -38,8 +38,7 @@ export default function CrudBanner(){
 const [banners,setBanners]=useState<Banner[]>([]);
 const [cargando,setCargando]=useState(true);
 const [busqueda,setBusqueda]=useState("");
-
-
+  const [menuVisible, setMenuVisible] = useState(false);
 
 // ==========================================
 // CARGAR BANNERS
@@ -376,7 +375,16 @@ return(
 
 
 <View style={estilos.header}>
-
+  <Pressable
+    style={estilos.menuButton}
+    onPress={() => setMenuVisible(true)}
+  >
+    <Ionicons
+      name="menu"
+      size={28}
+      color="#FFFFFF"
+    />
+  </Pressable>
 
 <Text style={estilos.titulo}>
 
@@ -476,7 +484,11 @@ refreshing={cargando}
 
 />
 
-
+<MenuLateral
+  visible={menuVisible}
+  onClose={() => setMenuVisible(false)}
+  seccionActual="banners"
+/>
 
 </View>
 
@@ -603,6 +615,15 @@ flex:1,
 backgroundColor:"#000",
 justifyContent:"center",
 alignItems:"center"
+},
+
+menuButton:{
+  width:45,
+  height:45,
+  borderRadius:12,
+  backgroundColor:"#1A1A1A",
+  justifyContent:"center",
+  alignItems:"center",
 }
 
 });

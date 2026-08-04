@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -118,9 +119,26 @@ return(
 <View style={estilos.container}>
 
 
+<View style={estilos.header}>
+
+<Pressable
+  style={estilos.backButton}
+  onPress={() => router.back()}
+>
+  <Ionicons
+    name="arrow-back"
+    size={24}
+    color="#FFFFFF"
+  />
+</Pressable>
+
+
 <Text style={estilos.titulo}>
-Crear Marca
+  Crear Marca
 </Text>
+
+
+</View>
 
 
 
@@ -326,7 +344,24 @@ justifyContent:"center"
 cancelarTexto:{
 color:"#fff",
 fontWeight:"bold"
-}
+},
+
+header:{
+  flexDirection:"row",
+  alignItems:"center",
+  marginBottom:30,
+},
+
+
+backButton:{
+  width:42,
+  height:42,
+  borderRadius:21,
+  backgroundColor:"#1A1A1A",
+  justifyContent:"center",
+  alignItems:"center",
+  marginRight:15,
+},
 
 
 });

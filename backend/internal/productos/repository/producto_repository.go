@@ -116,6 +116,9 @@ func GetAllProducts() ([]models.Producto, error) {
 		p.activo,
 		p.destacado,
 
+		-- NOMBRE DE LA CATEGORÍA
+		c.nombre AS categoria,
+
 		-- IMAGEN PRINCIPAL
 		COALESCE(
 			(
@@ -133,6 +136,9 @@ func GetAllProducts() ([]models.Producto, error) {
 		COALESCE(i.stock_minimo, 0) AS stock_minimo
 
 	FROM productos p
+
+	LEFT JOIN categorias c
+		ON c.id_categoria = p.id_categoria
 
 	LEFT JOIN inventario i
 		ON i.id_producto = p.id_producto
@@ -167,6 +173,11 @@ func GetAllProducts() ([]models.Producto, error) {
 			&product.PrecioOferta,
 			&product.Activo,
 			&product.Destacado,
+
+			// CATEGORÍA
+			&product.Categoria,
+
+			// IMAGEN
 			&product.Imagen,
 
 			// INVENTARIO
@@ -343,7 +354,6 @@ func DeleteProduct(id string) error {
 	return err
 
 }
-
 
 func DeleteAllProductImages(
 	productID string,

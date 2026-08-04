@@ -1,169 +1,169 @@
-package service
+	package service
 
-import (
-	"context"
-	"errors"
-	"fmt"
-	"mime/multipart"
+	import (
+		"context"
+		"errors"
+		"fmt"
+		"mime/multipart"
 
-	"ecommerce-backend/internal/banner/models"
-	"ecommerce-backend/internal/banner/repository"
-	"ecommerce-backend/internal/cloudinary"
+		"ecommerce-backend/internal/banner/models"
+		"ecommerce-backend/internal/banner/repository"
+		"ecommerce-backend/internal/cloudinary"
 
-	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
-)
+		"github.com/cloudinary/cloudinary-go/v2/api/uploader"
+	)
 
-// ==========================================
-// OBTENER TODOS
-// ==========================================
+	// ==========================================
+	// OBTENER TODOS
+	// ==========================================
 
-func GetAllBanners() ([]models.Banner, error) {
+	func GetAllBanners() ([]models.Banner, error) {
 
-	return repository.GetAllBanners()
+		return repository.GetAllBanners()
 
-}
+	}
 
-// ==========================================
-// CREAR
-// ==========================================
+	// ==========================================
+	// CREAR
+	// ==========================================
 
-func CreateBanner(
-	banner models.Banner,
-) (int, error) {
+	func CreateBanner(
+		banner models.Banner,
+	) (int, error) {
 
-	if banner.Titulo == "" {
+		if banner.Titulo == "" {
 
-		return 0, errors.New(
-			"el titulo es obligatorio",
+			return 0, errors.New(
+				"el titulo es obligatorio",
+			)
+
+		}
+
+		return repository.CreateBanner(
+			banner,
 		)
 
 	}
 
-	return repository.CreateBanner(
-		banner,
-	)
+	// ==========================================
+	// OBTENER POR ID
+	// ==========================================
 
-}
+	func GetBannerByID(
+		id int,
+	) (models.Banner, error) {
 
-// ==========================================
-// OBTENER POR ID
-// ==========================================
+		if id <= 0 {
 
-func GetBannerByID(
-	id int,
-) (models.Banner, error) {
+			return models.Banner{},
+				errors.New(
+					"id invalido",
+				)
 
-	if id <= 0 {
+		}
 
-		return models.Banner{},
-			errors.New(
+		return repository.GetBannerByID(
+			id,
+		)
+
+	}
+
+	// ==========================================
+	// ACTUALIZAR
+	// ==========================================
+
+	func UpdateBanner(
+		id int,
+		banner models.Banner,
+	) error {
+
+		if id <= 0 {
+
+			return errors.New(
 				"id invalido",
 			)
 
-	}
+		}
 
-	return repository.GetBannerByID(
-		id,
-	)
-
-}
-
-// ==========================================
-// ACTUALIZAR
-// ==========================================
-
-func UpdateBanner(
-	id int,
-	banner models.Banner,
-) error {
-
-	if id <= 0 {
-
-		return errors.New(
-			"id invalido",
+		return repository.UpdateBanner(
+			id,
+			banner,
 		)
 
 	}
 
-	return repository.UpdateBanner(
-		id,
-		banner,
-	)
+	// ==========================================
+	// ELIMINAR
+	// ==========================================
 
-}
+	func DeleteBanner(
+		id int,
+	) error {
 
-// ==========================================
-// ELIMINAR
-// ==========================================
+		if id <= 0 {
 
-func DeleteBanner(
-	id int,
-) error {
+			return errors.New(
+				"id invalido",
+			)
 
-	if id <= 0 {
+		}
 
-		return errors.New(
-			"id invalido",
+		return repository.DeleteBanner(
+			id,
 		)
 
 	}
 
-	return repository.DeleteBanner(
-		id,
-	)
+	// ==========================================
+	// SUBIR IMAGEN CLOUDINARY
+	// ==========================================
 
-}
+	func UploadBannerImage(
+		file multipart.File,
+		header *multipart.FileHeader,
+		bannerID string,
+	) (string, error) {
 
-// ==========================================
-// SUBIR IMAGEN CLOUDINARY
-// ==========================================
+		cld, err := cloudinary.GetCloudinary()
 
-func UploadBannerImage(
-	file multipart.File,
-	header *multipart.FileHeader,
-	bannerID string,
-) (string, error) {
+		if err != nil {
 
-	cld, err := cloudinary.GetCloudinary()
+			return "", err
 
-	if err != nil {
+		}
 
-		return "", err
+		ctx := context.Background()
 
-	}
+		result, err := cld.Upload.Upload(
+			ctx,
+			file,
+			uploader.UploadParams{
 
-	ctx := context.Background()
+				Folder: fmt.Sprintf(
+					"tecommerce/banners/%s",
+					bannerID,
+				),
+			},
+		)
 
-	result, err := cld.Upload.Upload(
-		ctx,
-		file,
-		uploader.UploadParams{
+		if err != nil {
 
-			Folder: fmt.Sprintf(
-				"tecommerce/banners/%s",
-				bannerID,
-			),
-		},
-	)
+			return "", err
 
-	if err != nil {
+		}
 
-		return "", err
+		err = repository.UpdateBannerImage(
+			bannerID,
+			result.SecureURL,
+			result.PublicID,
+		)
 
-	}
+		if err != nil {
 
-	err = repository.UpdateBannerImage(
-		bannerID,
-		result.SecureURL,
-		result.PublicID,
-	)
+			return "", err
 
-	if err != nil {
+		}
 
-		return "", err
+		return result.SecureURL, nil
 
 	}
-
-	return result.SecureURL, nil
-
-}

@@ -76,17 +76,27 @@ const irAComprar = () => {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.container}>
         {/* HEADER */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.titulo}>Mi carrito</Text>
-            {carrito.length > 0 && (
-              <Text style={styles.subtitulo}>
-                {cantidadTotal} productos
-              </Text>
-            )}
-          </View>
-          <View style={{ width: 40 }} />
-        </View>
+     {/* HEADER */}
+<View style={styles.header}>
+
+
+  <View style={styles.headerCenter}>
+    <Text style={styles.titulo}>
+      Mi carrito
+    </Text>
+
+    {carrito.length > 0 && (
+      <Text style={styles.subtitulo}>
+        {cantidadTotal} productos
+      </Text>
+    )}
+
+  </View>
+
+
+  <View style={styles.headerRight} />
+
+</View>
 
         {/* SCROLL PRINCIPAL CON ESPACIO INFERIOR */}
         <ScrollView
@@ -490,6 +500,23 @@ const styles = StyleSheet.create({
 
 controlDisabled: {
   opacity: 0.5,
+},
+
+headerLeft:{
+  width:40,
+  justifyContent:"center",
+  alignItems:"flex-start",
+},
+
+headerCenter:{
+  position:"absolute",
+  left:0,
+  right:0,
+  alignItems:"center",
+},
+
+headerRight:{
+  width:40,
 },
 
 });
