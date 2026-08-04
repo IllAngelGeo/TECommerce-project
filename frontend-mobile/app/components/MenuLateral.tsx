@@ -16,6 +16,7 @@ interface MenuLateralProps {
     | "productos"
     | "categorias"
     | "marcas"
+    | "banners"
     | "inventario";
 }
 
@@ -83,14 +84,13 @@ return (
       <View style={estilos.menuOpciones}>
 
         {/* DASHBOARD */}
-        {/* DASHBOARD */}
 <Pressable
   style={[
     estilos.menuItem,
     seccionActual === "dashboard" && estilos.menuItemActivo,
   ]}
   onPress={() =>
-    navegar("/cap-presentation/Views/AdminHome")
+    navegar("/cap-presentation/Views/admin/AdminHome")
   }
 >
   <Ionicons
@@ -133,7 +133,7 @@ return (
       estilos.menuItemActivo,
   ]}
   onPress={() =>
-    navegar("/cap-presentation/Views/CrudProducto")
+    navegar("/cap-presentation/Views/admin/CrudProducto")
   }
 >
   <Ionicons
@@ -176,7 +176,7 @@ return (
       estilos.menuItemActivo,
   ]}
   onPress={() =>
-    navegar("/cap-presentation/Views/Categorias")
+    navegar("/cap-presentation/Views/admin/Categoria/CrudCategorias")
   }
 >
   <Ionicons
@@ -212,19 +212,96 @@ return (
 
         {/* MARCAS */}
 
-<Pressable style={[ estilos.menuItem, seccionActual === "marcas" && estilos.menuItemActivo, ]}
-  onPress={() => ("/cap-presentation/Views/Categorias") } >
-  <Ionicons name="airplane" size={23} color={ seccionActual === "marcas" ? "#000000" : "#FFFFFF" }/>
-  <Text style={[ estilos.menuItemText, seccionActual === "marcas" && estilos.menuItemTextActivo, ]}> Marcas </Text>
-  <Ionicons name="chevron-forward" size={18} color={ seccionActual === "marcas" ? "#000000" : "#555555" }/>
+{/* MARCAS */}
+<Pressable
+  style={[
+    estilos.menuItem,
+    seccionActual === "marcas" && estilos.menuItemActivo,
+  ]}
+  onPress={() =>
+    navegar("/cap-presentation/Views/admin/Marcas/CrudMarcas")
+  }
+>
+  <Ionicons
+    name="pricetag-outline"
+    size={23}
+    color={
+      seccionActual === "marcas"
+        ? "#000000"
+        : "#FFFFFF"
+    }
+  />
+
+  <Text
+    style={[
+      estilos.menuItemText,
+      seccionActual === "marcas" &&
+        estilos.menuItemTextActivo,
+    ]}
+  >
+    Marcas
+  </Text>
+
+  <Ionicons
+    name="chevron-forward"
+    size={18}
+    color={
+      seccionActual === "marcas"
+        ? "#000000"
+        : "#555555"
+    }
+  />
 </Pressable>
 
-        {/* Banners */}
-<Pressable style={[ estilos.menuItem, seccionActual === "marcas" && estilos.menuItemActivo, ]}
-  onPress={() => ("/cap-presentation/Views/Categorias") } >
-  <Ionicons name="airplane" size={23} color={ seccionActual === "marcas" ? "#000000" : "#FFFFFF" }/>
-  <Text style={[ estilos.menuItemText, seccionActual === "marcas" && estilos.menuItemTextActivo, ]}> Banners </Text>
-  <Ionicons name="chevron-forward" size={18} color={ seccionActual === "marcas" ? "#000000" : "#555555" }/>
+
+
+{/* BANNERS */}
+
+<Pressable
+  style={[
+    estilos.menuItem,
+    seccionActual === "banners" &&
+      estilos.menuItemActivo,
+  ]}
+  onPress={() =>
+    navegar(
+      "/cap-presentation/Views/admin/Banners/CrudBanner"
+    )
+  }
+>
+
+  <Ionicons
+    name="images-outline"
+    size={23}
+    color={
+      seccionActual === "banners"
+        ? "#000000"
+        : "#FFFFFF"
+    }
+  />
+
+
+  <Text
+    style={[
+      estilos.menuItemText,
+      seccionActual === "banners" &&
+        estilos.menuItemTextActivo,
+    ]}
+  >
+    Banners
+  </Text>
+
+
+  <Ionicons
+    name="chevron-forward"
+    size={18}
+    color={
+      seccionActual === "banners"
+        ? "#000000"
+        : "#555555"
+    }
+  />
+
 </Pressable>
 
       </View>
@@ -237,7 +314,7 @@ return (
           onPress={() => {
             onClose();
             router.replace(
-              "/cap-presentation/Views/Login"
+              "/cap-presentation/Views/auth/Login"
             );
           }}
         >

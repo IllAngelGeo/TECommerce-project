@@ -11,7 +11,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import NavegacionCliente from "../../components/navegacioncliente";
+import NavegacionCliente from "../../../components/navegacioncliente";
 import { auth } from "../../../firebase/firebase";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";

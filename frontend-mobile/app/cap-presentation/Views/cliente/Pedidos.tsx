@@ -198,9 +198,14 @@ export default function Pedidos() {
             <Text style={styles.vacioTexto}>
               Cuando realices tu primera compra, tus pedidos aparecerán aquí.
             </Text>
-            <Pressable style={styles.explorar} onPress={() => router.back()}>
-              <Text style={styles.explorarTexto}>Explorar productos</Text>
-            </Pressable>
+<Pressable 
+  style={styles.explorar} 
+  onPress={() => router.replace("/cap-presentation/Views/cliente/Home")}
+>
+  <Text style={styles.explorarTexto}>
+    Explorar productos
+  </Text>
+</Pressable>
           </View>
         ) : (
           <ScrollView
@@ -275,12 +280,7 @@ export default function Pedidos() {
                         </Text>
                       </View>
 
-                      <View style={styles.infoItem}>
-                        <Ionicons name="cube-outline" size={16} color="#777" />
-                        <Text style={styles.infoTexto}>
-                          {contarProductos(pedido.detalles)} productos
-                        </Text>
-                      </View>
+
 
                       {pedido.metodo_pago && (
                         <View style={styles.infoItem}>

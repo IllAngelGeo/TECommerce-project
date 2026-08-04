@@ -1,22 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, RefreshControl, Animated, KeyboardAvoidingView, Platform, } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
 import { auth } from "../../../firebase/firebase";
 import { API_URL } from "../../constants/api_url";
 
@@ -41,7 +27,6 @@ export default function DireccionEntrega() {
   
   // Estados
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [direccion, setDireccion] = useState<Direccion | null>(null);
   const [direcciones, setDirecciones] = useState<Direccion[]>([]);
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
@@ -114,15 +99,11 @@ export default function DireccionEntrega() {
 
       if (Array.isArray(data) && data.length > 0) {
         setDirecciones(data);
-        const principal = data.find((item: Direccion) => item.principal === true) || data[0];
-        setDireccion(principal);
       } else {
         setDirecciones([]);
-        setDireccion(null);
       }
     } catch (error) {
       console.log("ERROR OBTENIENDO DIRECCIÓN:", error);
-      setDireccion(null);
     } finally {
       setCargando(false);
       setRefrescando(false);
@@ -183,7 +164,6 @@ export default function DireccionEntrega() {
             ciudad: ciudad.trim(),
             estado: estado.trim(),
             referencias: referencias.trim() || null,
-            principal: direccion === null || direcciones.length === 0,
           }),
         }
       );
@@ -223,27 +203,6 @@ export default function DireccionEntrega() {
     setReferencias("");
     setErrores({});
   };
-
-  // ==========================================
-  // CONTINUAR
-  // ==========================================
-const continuar = () => {
-  if (!direccion) {
-    Alert.alert(
-      "Dirección requerida",
-      "Primero debes seleccionar una dirección de entrega."
-    );
-    return;
-  }
-
-router.push({
-  pathname: "/cap-presentation/Views/cliente/MetodoPago" as any,
-  params: {
-    id_direccion: direccion.id_direccion,
-  },
-});
-};
-
 
   // ==========================================
   // OBTENER ICONO
@@ -324,7 +283,6 @@ router.push({
 
               <View style={styles.listaDirecciones}>
                 {direcciones.map((item, index) => {
-                  const seleccionada = direccion?.id_direccion === item.id_direccion;
                   const entradaAnimada = {
                     transform: [
                       {
@@ -342,16 +300,12 @@ router.push({
                       <Pressable
                         style={[
                           styles.direccionCard,
-                          seleccionada && styles.direccionSeleccionada,
                         ]}
-                        onPress={() => setDireccion(item)}
                       >
                         <View style={styles.direccionHeader}>
                           <View style={styles.direccionTituloContainer}>
                             <Ionicons
-                              name={seleccionada ? "radio-button-on" : "radio-button-off"}
                               size={18}
-                              color={seleccionada ? "#4CAF50" : "#555"}
                             />
                             <Text style={styles.direccionTitulo}>
                               {item.principal ? "Principal" : "Dirección"}
@@ -402,24 +356,6 @@ router.push({
 
       <Animated.View style={{ opacity: animacion }}>
 
-  {/* BOTÓN CONTINUAR AL PAGO */}
-  <Pressable
-    style={({ pressed }) => [
-      styles.continuar,
-      pressed && styles.continuarPresionado,
-    ]}
-    onPress={continuar}
-  >
-    <Text style={styles.continuarTexto}>
-      Continuar al pago
-    </Text>
-
-    <Ionicons
-      name="arrow-forward"
-      size={20}
-      color="#000"
-    />
-  </Pressable>
 
   {/* AGREGAR DIRECCIÓN */}
   <Pressable

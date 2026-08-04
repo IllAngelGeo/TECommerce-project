@@ -3,10 +3,13 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 
+	bannersControllers "ecommerce-backend/internal/banner/controller"
 	carritoControllers "ecommerce-backend/internal/carrito/controller"
 	categoriasControllers "ecommerce-backend/internal/categorias/controller"
 	direccionesControllers "ecommerce-backend/internal/direcciones/controller"
 	favoritosControllers "ecommerce-backend/internal/favoritos/controller"
+	marcasControllers "ecommerce-backend/internal/marca/controller"
+	mercadopagoControllers "ecommerce-backend/internal/mercadopago"
 	paypalControllers "ecommerce-backend/internal/paypal"
 	pedidoControllers "ecommerce-backend/internal/pedido/controller"
 	productosControllers "ecommerce-backend/internal/productos/controllers"
@@ -46,11 +49,67 @@ func SetupRoutes(r *gin.Engine) {
 	// CATEGORÍAS
 	// ==========================================
 
+	// ==========================================
+	// CATEGORÍAS
+	// ==========================================
+
 	categorias := r.Group("/categorias")
 	{
+		categorias.POST(
+			"",
+			categoriasControllers.CreateCategory,
+		)
+
 		categorias.GET(
 			"",
 			categoriasControllers.GetCategories,
+		)
+
+		categorias.GET(
+			"/:id",
+			categoriasControllers.GetCategory,
+		)
+
+		categorias.PUT(
+			"/:id",
+			categoriasControllers.UpdateCategory,
+		)
+
+		categorias.DELETE(
+			"/:id",
+			categoriasControllers.DeleteCategory,
+		)
+	}
+
+	// ==========================================
+	// MARCAS
+	// ==========================================
+
+	marcas := r.Group("/marcas")
+	{
+		marcas.POST(
+			"",
+			marcasControllers.CreateMarca,
+		)
+
+		marcas.GET(
+			"",
+			marcasControllers.GetAllMarcas,
+		)
+
+		marcas.GET(
+			"/:id",
+			marcasControllers.GetMarcaByID,
+		)
+
+		marcas.PUT(
+			"/:id",
+			marcasControllers.UpdateMarca,
+		)
+
+		marcas.DELETE(
+			"/:id",
+			marcasControllers.DeleteMarca,
 		)
 	}
 
@@ -226,54 +285,102 @@ func SetupRoutes(r *gin.Engine) {
 		// DIRECCIONES
 		// ==========================================
 
-		direcciones := r.Group("/direcciones")
-		{
-			direcciones.GET(
-				"/firebase/:id",
-				direccionesControllers.ObtenerDirecciones,
-			)
+	}
 
-			direcciones.POST(
-				"/firebase/:id",
-				direccionesControllers.CrearDireccion,
-			)
+	direcciones := r.Group("/direcciones")
+	{
+		direcciones.GET(
+			"/firebase/:id",
+			direccionesControllers.ObtenerDirecciones,
+		)
 
-			direcciones.PUT(
-				"/:id_direccion",
-				direccionesControllers.ActualizarDireccion,
-			)
+		direcciones.POST(
+			"/firebase/:id",
+			direccionesControllers.CrearDireccion,
+		)
 
-			direcciones.DELETE(
-				"/:id_direccion",
-				direccionesControllers.EliminarDireccion,
-			)
-		}
+		direcciones.PUT(
+			"/:id_direccion",
+			direccionesControllers.ActualizarDireccion,
+		)
 
-		// Paypal
-		paypal := r.Group("/paypal")
-		{
-			paypal.GET(
-				"/test",
-				paypalControllers.TestConnection,
-			)
+		direcciones.DELETE(
+			"/firebase/:id/:id_direccion",
+			direccionesControllers.EliminarDireccion,
+		)
+	}
 
-			paypal.POST(
-				"/create-order",
-				paypalControllers.CreateOrderController,
-			)
+	// Paypal
+	paypal := r.Group("/paypal")
+	{
+		paypal.GET(
+			"/test",
+			paypalControllers.TestConnection,
+		)
 
-			paypal.POST(
-				"/capture-order",
-				paypalControllers.CaptureOrderController,
-			)
+		paypal.POST(
+			"/create-order",
+			paypalControllers.CreateOrderController,
+		)
 
-			paypal.GET(
-				"/success",
-				paypalControllers.Success,
-			)
+		paypal.POST(
+			"/capture-order",
+			paypalControllers.CaptureOrderController,
+		)
 
-		}
+		paypal.GET(
+			"/success",
+			paypalControllers.Success,
+		)
 
 	}
+
+	// ==========================================
+	// MERCADO PAGO
+	// ==========================================
+
+	mercadoPago := r.Group("/mercadopago")
+	{
+		mercadoPago.POST(
+			"/create-preference",
+			mercadopagoControllers.CreatePreferenceController,
+		)
+	}
+
+	// ==========================================
+	// BANNERS
+	// ==========================================
+
+	banners := r.Group("/banners")
+	{
+		banners.POST(
+			"",
+			bannersControllers.CreateBanner,
+		)
+
+		banners.GET(
+			"",
+			bannersControllers.GetAllBanners,
+		)
+
+		banners.GET(
+			"/:id",
+			bannersControllers.GetBannerByID,
+		)
+
+		banners.PUT(
+			"/:id",
+			bannersControllers.UpdateBanner,
+		)
+
+		banners.DELETE(
+			"/:id",
+			bannersControllers.DeleteBanner,
+		)
+	}
+
+	// ==========================================
+	// IMAGEN DEL BANNER
+	// ==========================================
 
 }

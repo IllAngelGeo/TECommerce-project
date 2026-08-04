@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Imagen } from "../../components/Imagen";
+import { Imagen } from "../../../components/Imagen";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { signOut } from "firebase/auth";

@@ -12,7 +12,6 @@ func GetAllCategories() ([]models.Categoria, error) {
 			id_categoria,
 			nombre,
 			descripcion,
-			imagen_url,
 			activo,
 			fecha_creacion
 		FROM categorias
@@ -38,7 +37,6 @@ func GetAllCategories() ([]models.Categoria, error) {
 			&categoria.IDCategoria,
 			&categoria.Nombre,
 			&categoria.Descripcion,
-			&categoria.ImagenURL,
 			&categoria.Activo,
 			&categoria.FechaCreacion,
 		)
@@ -56,3 +54,92 @@ func GetAllCategories() ([]models.Categoria, error) {
 
 	return categorias, nil
 }
+
+func CreateCategory(categoria models.Categoria) error {
+
+	query := `
+		INSERT INTO categorias
+		(
+			nombre,
+			descripcion,
+			activo
+		)
+		VALUES ($1,$2,$3)
+	`
+
+	_, err := database.DB.Exec(
+		query,
+		categoria.Nombre,
+		categoria.Descripcion,
+		categoria.Activo,
+	)
+
+	return err
+}
+
+func UpdateCategory(id int, categoria models.Categoria) error {
+
+	query := `
+		UPDATE categorias
+		SET
+			nombre = $1,
+			descripcion = $2,
+			activo = $3
+		WHERE id_categoria = $4
+	`
+
+	_, err := database.DB.Exec(
+		query,
+		categoria.Nombre,
+		categoria.Descripcion,
+		categoria.Activo,
+		id,
+	)
+
+	return err
+}
+
+func GetCategoryByID(id int) (models.Categoria, error) {
+
+	var categoria models.Categoria
+
+	query := `
+		SELECT
+			id_categoria,
+			nombre,
+			descripcion,
+			activo,
+			fecha_creacion
+		FROM categorias
+		WHERE id_categoria = $1
+	`
+
+	err := database.DB.QueryRow(
+		query,
+		id,
+	).Scan(
+		&categoria.IDCategoria,
+		&categoria.Nombre,
+		&categoria.Descripcion,
+		&categoria.Activo,
+		&categoria.FechaCreacion,
+	)
+
+	return categoria, err
+}
+
+func DeleteCategory(id int) error {
+
+	query := `
+		DELETE FROM categorias
+		WHERE id_categoria = $1
+	`
+
+	_, err := database.DB.Exec(
+		query,
+		id,
+	)
+
+	return err
+}
+	

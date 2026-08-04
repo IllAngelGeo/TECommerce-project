@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { API_URL } from "../../constants/api_url";
-
+import MenuLateral from "../../../components/MenuLateral";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -40,6 +40,7 @@ export default function Productos() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     obtenerProductos();
@@ -219,7 +220,7 @@ export default function Productos() {
             style={estilos.botonEditar}
             onPress={() =>
               router.push({
-                pathname: "/cap-presentation/Views/EditarProducto",
+                pathname: "/cap-presentation/Views/admin/EditarProducto",
                 params: { id: item.id_producto },
               })
             }
@@ -279,22 +280,52 @@ export default function Productos() {
   return (
     <View style={estilos.safe}>
       {/* HEADER */}
-      <View style={estilos.header}>
-        <View>
-          <Text style={estilos.titulo}>Productos</Text>
-          <Text style={estilos.subtitulo}>
-            Administrar los productos
-          </Text>
-        </View>
+ <View style={estilos.header}>
 
-        <Pressable
-          style={estilos.botonAgregar}
-          onPress={() => router.push("/cap-presentation/Views/CrearProducto")}
-        >
-          <Ionicons name="add" size={22} color="#000000" />
-          <Text style={estilos.botonAgregarTexto}>Nuevo</Text>
-        </Pressable>
-      </View>
+  <View style={estilos.headerIzquierda}>
+
+    <Pressable
+      style={estilos.botonMenu}
+      onPress={() => setMenuVisible(true)}
+    >
+      <Ionicons
+        name="menu"
+        size={28}
+        color="#FFFFFF"
+      />
+    </Pressable>
+
+
+    <View>
+      <Text style={estilos.titulo}>
+        Productos
+      </Text>
+    </View>
+
+  </View>
+
+
+  <Pressable
+    style={estilos.botonAgregar}
+    onPress={() =>
+      router.push(
+        "/cap-presentation/Views/admin/CrearProducto"
+      )
+    }
+  >
+    <Ionicons 
+      name="add" 
+      size={22} 
+      color="#000000" 
+    />
+
+    <Text style={estilos.botonAgregarTexto}>
+      Nuevo
+    </Text>
+
+  </Pressable>
+
+</View>
 
       {/* BÚSQUEDA */}
       <View style={estilos.busquedaContainer}>
@@ -494,6 +525,12 @@ export default function Productos() {
           </View>
         </View>
       </Modal>
+<MenuLateral
+  visible={menuVisible}
+  onClose={() => setMenuVisible(false)}
+  seccionActual="productos"
+/>
+
     </View>
   );
 }
@@ -516,7 +553,7 @@ const estilos = StyleSheet.create({
 
   titulo: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: "bold",
   },
 
@@ -897,4 +934,20 @@ const estilos = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
+
+  headerIzquierda:{
+  flexDirection:"row",
+  alignItems:"center",
+  gap:12,
+},
+
+botonMenu:{
+  width:42,
+  height:42,
+  borderRadius:12,
+  backgroundColor:"#111111",
+  justifyContent:"center",
+  alignItems:"center",
+},
+
 });

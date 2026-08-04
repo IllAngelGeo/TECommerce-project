@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import * as ImagePicker from "expo-image-picker";
+
 import {
   ActivityIndicator,
   Alert,
@@ -247,7 +248,7 @@ if (imagenesSeleccionadas.length > 0 && data.producto?.id_producto) {
             "Producto creado",
             "El producto se creó correctamente, pero hubo un error al subir algunas imágenes."
           );
-          router.replace("/cap-presentation/Views/Productos");
+          router.replace("/cap-presentation/Views/admin/CrudProducto");
           return;
         } finally {
           setSubiendoImagen(false);
@@ -260,7 +261,7 @@ if (imagenesSeleccionadas.length > 0 && data.producto?.id_producto) {
         [
           {
             text: "Aceptar",
-            onPress: () => router.replace("/cap-presentation/Views/Productos"),
+            onPress: () => router.replace("/cap-presentation/Views/admin/CrudProducto"),
           },
         ]
       );
