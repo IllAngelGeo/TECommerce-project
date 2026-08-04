@@ -41,3 +41,8 @@ const styles = StyleSheet.create({
   }
 
 });
+
+
+export default function ImagenRoute(){
+  return null;
+}

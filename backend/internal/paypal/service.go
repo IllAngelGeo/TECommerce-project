@@ -161,8 +161,8 @@ func CreateOrder(amount string) (*CreateOrderResponse, error) {
 			"brand_name":   "TeCommerce",
 			"landing_page": "LOGIN",
 			"user_action":  "PAY_NOW",
-			"return_url":   "http://localhost:8080/paypal/success",
-			"cancel_url":   "http://localhost:8080/paypal/cancel",
+			"return_url":   "tecommerce://paypal-success",
+			"cancel_url":   "tecommerce://paypal-cancel",
 		},
 	}
 

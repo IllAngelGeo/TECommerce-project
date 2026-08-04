@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TeCommerce",
-    "slug": "tecommerce",
+"slug": "frontend-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "tecommerce",
@@ -37,6 +37,7 @@
 
     "plugins": [
       "expo-router",
+      
       [
         "expo-splash-screen",
         {

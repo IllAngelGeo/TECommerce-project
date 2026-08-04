@@ -5,7 +5,7 @@ import {onAuthStateChanged, User, signOut,
 } from "firebase/auth";import { auth } from "../../../firebase/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import NavegacionCliente from "../../components/navegacioncliente";
+import NavegacionCliente from "../../../components/navegacioncliente";
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -25,11 +25,10 @@ const cerrarSesion = async () => {
   try {
     await signOut(auth);
 
-    router.dismissAll(); // limpia el historial de navegación
-    router.replace("/"); // vuelve al index -> Login
+    router.replace("/");
 
   } catch (error) {
-    console.error(error);
+    console.error("Error cerrando sesión:", error);
   }
 };
 
@@ -147,11 +146,16 @@ const cerrarSesion = async () => {
 </Pressable>
 
           <Pressable
-            style={({ pressed }) => [
-              estilos.option,
-              pressed && estilos.optionPressed,
-            ]}
-          >
+  style={({ pressed }) => [
+    estilos.option,
+    pressed && estilos.optionPressed,
+  ]}
+  onPress={() =>
+    router.push(
+      "/cap-presentation/Views/cliente/MisDirecciones"
+    )
+  }
+>
             <View style={[estilos.optionIcon, { backgroundColor: '#14b8a620' }]}>
               <Ionicons name="location-outline" size={22} color="#14b8a6" />
             </View>
@@ -162,22 +166,7 @@ const cerrarSesion = async () => {
             <Ionicons name="chevron-forward" size={20} color="#555555" />
           </Pressable>
 
-          <Pressable
-            style={({ pressed }) => [
-              estilos.option,
-              pressed && estilos.optionPressed,
-            ]}
-          >
-            <View style={[estilos.optionIcon, { backgroundColor: '#f59e0b20' }]}>
-              <Ionicons name="settings-outline" size={22} color="#f59e0b" />
-            </View>
-            <View style={estilos.optionInfo}>
-              <Text style={estilos.optionTitle}>Configuración</Text>
-              <Text style={estilos.optionDescription}>Preferencias y configuración de cuenta</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#555555" />
-          </Pressable>
-        </View>
+                 </View>
 
         {/* CERRAR SESIÓN CON DISEÑO MEJORADO */}
       <Pressable

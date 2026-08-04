@@ -1,6 +1,8 @@
 package paypal
 
 import (
+	carritoRepository "ecommerce-backend/internal/carrito/repository"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,35 +30,93 @@ func TestConnection(c *gin.Context) {
 func CreateOrderController(c *gin.Context) {
 
 	var request struct {
-		Amount string `json:"amount" binding:"required"`
+		IDFirebase string `json:"id_firebase" binding:"required"`
 	}
 
-	// Leer JSON enviado por el cliente
+	// Leer JSON
+
 	if err := c.ShouldBindJSON(&request); err != nil {
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
-			"message": "El monto es obligatorio",
+			"message": "id_firebase obligatorio",
 		})
+
 		return
 	}
 
-	// Crear orden en PayPal
-	order, err := CreateOrder(request.Amount)
+	// Obtener usuario real
+
+	idUsuario, err :=
+		carritoRepository.ObtenerIDUsuarioFirebase(
+			request.IDFirebase,
+		)
 
 	if err != nil {
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "usuario no encontrado",
+		})
+
+		return
+	}
+
+	// Obtener total del carrito
+
+	total, err :=
+		carritoRepository.ObtenerTotalCarrito(
+			idUsuario,
+		)
+
+	if err != nil {
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,
-			"message": "No se pudo crear la orden de PayPal",
+			"message": "no se pudo obtener el total",
 			"error":   err.Error(),
 		})
+
+		return
+	}
+
+	// Convertir total a string
+
+	monto :=
+		fmt.Sprintf(
+			"%.2f",
+			total,
+		)
+
+	// Crear orden PayPal
+
+	order, err :=
+		CreateOrder(
+			monto,
+		)
+
+	if err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "no se pudo crear la orden PayPal",
+			"error":   err.Error(),
+		})
+
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
+
+		"success": true,
+
 		"order_id": order.ID,
-		"status":   order.Status,
-		"links":    order.Links,
+
+		"status": order.Status,
+
+		"links": order.Links,
+
+		"total": total,
 	})
 }
 

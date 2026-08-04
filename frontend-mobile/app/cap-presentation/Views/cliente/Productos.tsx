@@ -18,7 +18,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { API_URL } from "../../constants/api_url";
-import NavegacionCliente from "../../components/navegacioncliente";
+import NavegacionCliente from "../../../components/navegacioncliente";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;

@@ -4,8 +4,8 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { API_URL } from "../../constants/api_url";
-import { Boton } from "../../components/botones";
-import NavegacionCliente from  "../../components/navegacioncliente"
+import { Boton } from "../../../components/botones";
+import NavegacionCliente from  "../../../components/navegacioncliente"
 import { useContext } from "react";
 import { CartContext } from "../../../context/CartContext";
 

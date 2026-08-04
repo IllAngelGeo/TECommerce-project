@@ -103,31 +103,37 @@ func AgregarProducto(carrito *models.Carrito) error {
 func ObtenerCarrito(idUsuario string) ([]models.Carrito, error) {
 
 	query := `
-		SELECT
-			c.id_carrito,
-			c.id_usuario,
-			c.id_producto,
-			c.cantidad,
-			p.nombre,
-			p.precio,
-			pi.imagen_url,
-			COALESCE(i.stock, 0)
+    SELECT
+        c.id_carrito,
+        c.id_usuario,
+        c.id_producto,
+        c.cantidad,
+        p.nombre,
 
-		FROM carrito c
+        CASE
+            WHEN p.precio_oferta IS NOT NULL
+            AND p.precio_oferta > 0
+            THEN p.precio_oferta
+            ELSE p.precio
+        END,
 
-		INNER JOIN productos p
-			ON p.id_producto = c.id_producto
+        pi.imagen_url,
+        COALESCE(i.stock, 0)
 
-		LEFT JOIN inventario i
-			ON i.id_producto = p.id_producto
+    FROM carrito c
 
-		LEFT JOIN producto_imagenes pi
-			ON pi.id_producto = p.id_producto
-			AND pi.principal = true
+    INNER JOIN productos p
+        ON p.id_producto = c.id_producto
 
-		WHERE c.id_usuario = $1
-	`
+    LEFT JOIN inventario i
+        ON i.id_producto = p.id_producto
 
+    LEFT JOIN producto_imagenes pi
+        ON pi.id_producto = p.id_producto
+        AND pi.principal = true
+
+    WHERE c.id_usuario = $1
+`
 	rows, err := database.DB.Query(
 		query,
 		idUsuario,
@@ -300,4 +306,49 @@ func EliminarCarrito(
 	}
 
 	return nil
+}
+
+// ==========================================
+// OBTENER TOTAL DEL CARRITO
+// ==========================================
+
+func ObtenerTotalCarrito(
+	idUsuario string,
+) (float64, error) {
+
+	var total float64
+
+	query := `
+	SELECT
+		COALESCE(
+			SUM(
+				CASE
+					WHEN p.precio_oferta IS NOT NULL
+					AND p.precio_oferta > 0
+					THEN p.precio_oferta
+					ELSE p.precio
+				END
+				* c.cantidad
+			),
+			0
+		)
+
+	FROM carrito c
+
+	INNER JOIN productos p
+		ON p.id_producto = c.id_producto
+
+	WHERE c.id_usuario = $1
+`
+
+	err := database.DB.QueryRow(
+		query,
+		idUsuario,
+	).Scan(&total)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
 }

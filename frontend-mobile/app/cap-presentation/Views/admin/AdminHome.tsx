@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { PieChart } from "react-native-chart-kit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import MenuLateral from "../../components/MenuLateral";
+import MenuLateral from "../../../components/MenuLateral";
 import { API_URL } from "../../constants/api_url";
 
 const { width } = Dimensions.get("window");
