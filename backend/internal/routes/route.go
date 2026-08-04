@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 
+	iaController "ecommerce-backend/internal/IA/controller"
 	bannersControllers "ecommerce-backend/internal/banner/controller"
 	carritoControllers "ecommerce-backend/internal/carrito/controller"
 	categoriasControllers "ecommerce-backend/internal/categorias/controller"
@@ -236,24 +237,64 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	// ==========================================
+	// ==========================================
 	// PEDIDOS
 	// ==========================================
 
 	pedidos := r.Group("/pedidos")
 	{
+		// --------------------------------------
+		// CLIENTE: CREAR PEDIDO
+		// --------------------------------------
+
 		pedidos.POST(
 			"/firebase/:id",
 			pedidoControllers.CrearPedido,
 		)
+
+		// --------------------------------------
+		// CLIENTE: OBTENER SUS PEDIDOS
+		// --------------------------------------
 
 		pedidos.GET(
 			"/firebase/:id",
 			pedidoControllers.ObtenerPedidos,
 		)
 
+		// --------------------------------------
+		// CLIENTE: OBTENER DETALLES Y ESTADO
+		// --------------------------------------
+
 		pedidos.GET(
 			"/:id_pedido/detalles",
 			pedidoControllers.ObtenerDetallesPedido,
+		)
+
+		// --------------------------------------
+		// ADMIN: OBTENER TODOS LOS PEDIDOS
+		// --------------------------------------
+
+		pedidos.GET(
+			"/admin/todos",
+			pedidoControllers.ObtenerTodosLosPedidos,
+		)
+
+		// --------------------------------------
+		// ADMIN: OBTENER UN PEDIDO POR ID
+		// --------------------------------------
+
+		pedidos.GET(
+			"/admin/:id_pedido",
+			pedidoControllers.ObtenerPedidoPorID,
+		)
+
+		// --------------------------------------
+		// ADMIN: ACTUALIZAR ESTADO
+		// --------------------------------------
+
+		pedidos.PATCH(
+			"/admin/:id_pedido/estado",
+			pedidoControllers.ActualizarEstadoPedido,
 		)
 	}
 
@@ -382,5 +423,18 @@ func SetupRoutes(r *gin.Engine) {
 	// ==========================================
 	// IMAGEN DEL BANNER
 	// ==========================================
+
+	banners.POST(
+		"/:id/imagen",
+		bannersControllers.UploadBannerImage,
+	)
+
+	ia := r.Group("/ia")
+	{
+		ia.GET(
+			"/analizar-inventario",
+			iaController.AnalizarInventario,
+		)
+	}
 
 }

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useContext } from "react";
+import { CartContext } from "../../../context/CartContext";
 import { auth } from "../../../firebase/firebase";
 import {
   Image,
@@ -45,7 +46,7 @@ interface Categoria {
 export default function Productos() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-
+  const { carrito } = useContext(CartContext);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(0);
 
@@ -285,12 +286,30 @@ const cambiarFavorito = async (producto: Producto) => {
           <Text style={estilos.headerTitle}>Productos</Text>
         </View>
 
-        <Pressable style={({ pressed }) => [estilos.headerRight, pressed && estilos.buttonPressed]}>
-          <Ionicons name="bag-handle-outline" size={22} color="#FFFFFF" />
-          <View style={estilos.cartBadge}>
-            <Text style={estilos.cartBadgeText}>0</Text>
-          </View>
-        </Pressable>
+       <Pressable
+  style={({ pressed }) => [
+    estilos.headerRight,
+    pressed && estilos.buttonPressed
+  ]}
+  onPress={() =>
+    router.push("/cap-presentation/Views/cliente/Carrito")
+  }
+>
+  <Ionicons 
+    name="cart-outline" 
+    size={22} 
+    color="#FFFFFF" 
+  />
+
+  {carrito.length > 0 && (
+    <View style={estilos.cartBadge}>
+      <Text style={estilos.cartBadgeText}>
+        {carrito.length}
+      </Text>
+    </View>
+  )}
+
+</Pressable>
       </View>
 
       <ScrollView

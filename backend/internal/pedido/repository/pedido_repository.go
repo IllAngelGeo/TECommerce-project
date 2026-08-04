@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -12,13 +13,16 @@ var (
 	ErrCarritoVacio      = errors.New("el carrito está vacío")
 	ErrStockInsuficiente = errors.New("stock insuficiente")
 	ErrProductoNoExiste  = errors.New("producto no existe")
+	ErrPedidoNoExiste    = errors.New("pedido no existe")
 )
 
 // ==========================================
 // OBTENER ID USUARIO POR FIREBASE
 // ==========================================
 
-func ObtenerIDUsuarioFirebase(idFirebase string) (string, error) {
+func ObtenerIDUsuarioFirebase(
+	idFirebase string,
+) (string, error) {
 
 	var idUsuario string
 
@@ -51,9 +55,11 @@ func CrearPedido(
 		return nil, err
 	}
 
+	// Si ocurre cualquier error antes del Commit,
+	// la transacción se revierte.
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -67,17 +73,12 @@ func CrearPedido(
 			c.cantidad,
 			p.precio,
 			COALESCE(i.stock, 0)
-
 		FROM carrito c
-
 		INNER JOIN productos p
 			ON p.id_producto = c.id_producto
-
 		INNER JOIN inventario i
 			ON i.id_producto = c.id_producto
-
 		WHERE c.id_usuario = $1
-
 		FOR UPDATE OF c, i
 	`
 
@@ -85,7 +86,6 @@ func CrearPedido(
 		queryCarrito,
 		idUsuario,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -104,15 +104,14 @@ func CrearPedido(
 
 		var producto ProductoCompra
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&producto.IDProducto,
 			&producto.Cantidad,
 			&producto.Precio,
 			&producto.Stock,
 		)
-
 		if err != nil {
-			rows.Close()
+			_ = rows.Close()
 			return nil, err
 		}
 
@@ -122,7 +121,7 @@ func CrearPedido(
 
 		if producto.Cantidad > producto.Stock {
 
-			rows.Close()
+			_ = rows.Close()
 
 			return nil, fmt.Errorf(
 				"%w: producto %s, disponible %d, solicitado %d",
@@ -145,12 +144,12 @@ func CrearPedido(
 		)
 	}
 
-	if err := rows.Err(); err != nil {
-		rows.Close()
+	if err = rows.Err(); err != nil {
+		_ = rows.Close()
 		return nil, err
 	}
 
-	rows.Close()
+	_ = rows.Close()
 
 	// ======================================
 	// VALIDAR CARRITO VACÍO
@@ -167,24 +166,25 @@ func CrearPedido(
 	var idPedido string
 
 	queryPedido := `
-    INSERT INTO pedidos
-    (
-        id_usuario,
-        id_direccion,
-        metodo_pago,
-        total,
-        estado
-    )
-    VALUES
-    (
-        $1,
-        $2,
-        $3,
-        $4,
-        'pendiente'
-    )
-    RETURNING id_pedido
-`
+		INSERT INTO pedidos
+		(
+			id_usuario,
+			id_direccion,
+			metodo_pago,
+			total,
+			estado
+		)
+		VALUES
+		(
+			$1,
+			$2,
+			$3,
+			$4,
+			'pendiente'
+		)
+		RETURNING id_pedido
+	`
+
 	err = tx.QueryRow(
 		queryPedido,
 		idUsuario,
@@ -238,7 +238,6 @@ func CrearPedido(
 			producto.Precio,
 			subtotal,
 		)
-
 		if err != nil {
 			return nil, err
 		}
@@ -256,24 +255,25 @@ func CrearPedido(
 			AND stock >= $1
 		`
 
-		result, err := tx.Exec(
+		resultado, updateErr := tx.Exec(
 			queryStock,
 			producto.Cantidad,
 			producto.IDProducto,
 		)
-
-		if err != nil {
+		if updateErr != nil {
+			err = updateErr
 			return nil, err
 		}
 
-		filas, err := result.RowsAffected()
-
-		if err != nil {
+		filas, rowsErr := resultado.RowsAffected()
+		if rowsErr != nil {
+			err = rowsErr
 			return nil, err
 		}
 
 		if filas == 0 {
-			return nil, ErrStockInsuficiente
+			err = ErrStockInsuficiente
+			return nil, err
 		}
 	}
 
@@ -283,12 +283,11 @@ func CrearPedido(
 
 	_, err = tx.Exec(
 		`
-		DELETE FROM carrito
-		WHERE id_usuario = $1
+			DELETE FROM carrito
+			WHERE id_usuario = $1
 		`,
 		idUsuario,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +297,6 @@ func CrearPedido(
 	// ======================================
 
 	err = tx.Commit()
-
 	if err != nil {
 		return nil, err
 	}
@@ -308,13 +306,13 @@ func CrearPedido(
 	// ======================================
 
 	pedido := &models.Pedido{
-		IDPedido:    idPedido,
-		IDUsuario:   idUsuario,
-		IDDireccion: idDireccion,
-		MetodoPago:  metodoPago,
-		Total:       total,
-		Estado:      "pendiente",
-		Detalles:    []models.PedidoDetalle{},
+		IDPedido:     idPedido,
+		IDUsuario:    idUsuario,
+		IDDireccion:  idDireccion,
+		MetodoPago:   metodoPago,
+		Total:        total,
+		Estado:       "pendiente",
+		Detalles:     []models.PedidoDetalle{},
 	}
 
 	return pedido, nil
@@ -324,26 +322,28 @@ func CrearPedido(
 // OBTENER PEDIDOS DEL USUARIO
 // ==========================================
 
-func ObtenerPedidos(idUsuario string) ([]models.Pedido, error) {
+func ObtenerPedidos(
+	idUsuario string,
+) ([]models.Pedido, error) {
 
 	query := `
-    SELECT
-        id_pedido,
-        id_usuario,
-        id_direccion,
-        metodo_pago,
-        total,
-        estado,
-        fecha_creacion
-    FROM pedidos
-    WHERE id_usuario = $1
-    ORDER BY fecha_creacion DESC
-`
+		SELECT
+			id_pedido,
+			id_usuario,
+			COALESCE(id_direccion::text, ''),
+			metodo_pago,
+			total,
+			estado,
+			fecha_creacion
+		FROM pedidos
+		WHERE id_usuario = $1
+		ORDER BY fecha_creacion DESC
+	`
+
 	rows, err := database.DB.Query(
 		query,
 		idUsuario,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +356,7 @@ func ObtenerPedidos(idUsuario string) ([]models.Pedido, error) {
 
 		var pedido models.Pedido
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&pedido.IDPedido,
 			&pedido.IDUsuario,
 			&pedido.IDDireccion,
@@ -377,7 +377,7 @@ func ObtenerPedidos(idUsuario string) ([]models.Pedido, error) {
 		)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -386,6 +386,174 @@ func ObtenerPedidos(idUsuario string) ([]models.Pedido, error) {
 	}
 
 	return pedidos, nil
+}
+
+// ==========================================
+// OBTENER TODOS LOS PEDIDOS PARA ADMIN
+// ==========================================
+
+func ObtenerTodosLosPedidos() (
+	[]models.Pedido,
+	error,
+) {
+
+	query := `
+		SELECT
+			id_pedido,
+			id_usuario,
+			COALESCE(id_direccion::text, ''),
+			metodo_pago,
+			total,
+			estado,
+			fecha_creacion
+		FROM pedidos
+		ORDER BY fecha_creacion DESC
+	`
+
+	rows, err := database.DB.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var pedidos []models.Pedido
+
+	for rows.Next() {
+
+		var pedido models.Pedido
+
+		err = rows.Scan(
+			&pedido.IDPedido,
+			&pedido.IDUsuario,
+			&pedido.IDDireccion,
+			&pedido.MetodoPago,
+			&pedido.Total,
+			&pedido.Estado,
+			&pedido.FechaCreacion,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		pedido.Detalles = []models.PedidoDetalle{}
+
+		pedidos = append(
+			pedidos,
+			pedido,
+		)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if pedidos == nil {
+		pedidos = []models.Pedido{}
+	}
+
+	return pedidos, nil
+}
+
+// ==========================================
+// OBTENER UN PEDIDO POR ID
+// ==========================================
+
+func ObtenerPedidoPorID(
+	idPedido string,
+) (*models.Pedido, error) {
+
+	query := `
+		SELECT
+			id_pedido,
+			id_usuario,
+			COALESCE(id_direccion::text, ''),
+			metodo_pago,
+			total,
+			estado,
+			fecha_creacion
+		FROM pedidos
+		WHERE id_pedido = $1
+	`
+
+	var pedido models.Pedido
+
+	err := database.DB.QueryRow(
+		query,
+		idPedido,
+	).Scan(
+		&pedido.IDPedido,
+		&pedido.IDUsuario,
+		&pedido.IDDireccion,
+		&pedido.MetodoPago,
+		&pedido.Total,
+		&pedido.Estado,
+		&pedido.FechaCreacion,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrPedidoNoExiste
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	pedido.Detalles = []models.PedidoDetalle{}
+
+	return &pedido, nil
+}
+
+// ==========================================
+// ACTUALIZAR ESTADO DE PEDIDO
+// ==========================================
+
+func ActualizarEstadoPedido(
+	idPedido string,
+	nuevoEstado string,
+) (*models.Pedido, error) {
+
+	query := `
+		UPDATE pedidos
+		SET estado = $1
+		WHERE id_pedido = $2
+		RETURNING
+			id_pedido,
+			id_usuario,
+			COALESCE(id_direccion::text, ''),
+			metodo_pago,
+			total,
+			estado,
+			fecha_creacion
+	`
+
+	var pedido models.Pedido
+
+	err := database.DB.QueryRow(
+		query,
+		nuevoEstado,
+		idPedido,
+	).Scan(
+		&pedido.IDPedido,
+		&pedido.IDUsuario,
+		&pedido.IDDireccion,
+		&pedido.MetodoPago,
+		&pedido.Total,
+		&pedido.Estado,
+		&pedido.FechaCreacion,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrPedidoNoExiste
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	pedido.Detalles = []models.PedidoDetalle{}
+
+	return &pedido, nil
 }
 
 // ==========================================
@@ -406,16 +574,12 @@ func ObtenerDetallesPedido(
 			d.subtotal,
 			p.nombre,
 			COALESCE(pi.imagen_url, '')
-
 		FROM pedido_detalles d
-
 		INNER JOIN productos p
 			ON p.id_producto = d.id_producto
-
 		LEFT JOIN producto_imagenes pi
 			ON pi.id_producto = p.id_producto
 			AND pi.principal = true
-
 		WHERE d.id_pedido = $1
 	`
 
@@ -423,7 +587,6 @@ func ObtenerDetallesPedido(
 		query,
 		idPedido,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -436,7 +599,7 @@ func ObtenerDetallesPedido(
 
 		var detalle models.PedidoDetalle
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&detalle.IDDetalle,
 			&detalle.IDPedido,
 			&detalle.IDProducto,
@@ -446,7 +609,6 @@ func ObtenerDetallesPedido(
 			&detalle.Nombre,
 			&detalle.Imagen,
 		)
-
 		if err != nil {
 			return nil, err
 		}
@@ -457,7 +619,7 @@ func ObtenerDetallesPedido(
 		)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 

@@ -40,7 +40,8 @@ const cerrarSesion = async () => {
         style={estilos.scroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={estilos.scrollContent}
-      >        {/* HEADER CON GRADIENTE */}
+      > 
+
         <LinearGradient
           colors={['#1a1a1a', '#000000']}
           style={estilos.headerGradient}
@@ -62,9 +63,13 @@ const cerrarSesion = async () => {
               </LinearGradient>
             </View>
 
-                <Text style={estilos.userName}> {usuario?.displayName || "Usuario"} </Text>
-            <Text style={estilos.userEmail}> {usuario?.email || "Sin correo electrónico"} </Text>
-            
+<Text style={estilos.userName}>
+  {usuario?.displayName || "Usuario"}
+</Text>
+
+<Text style={estilos.userEmail}>
+  {usuario?.email || "Sin correo electrónico"}
+</Text>            
              <Pressable onPress={() => router.push( "/cap-presentation/Views/cliente/EditarPerfil" ) } >
               <LinearGradient
                 colors={['#ededed', '#c2bfbf']}

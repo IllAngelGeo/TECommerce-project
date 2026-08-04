@@ -1,4 +1,6 @@
 import React from "react";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 import {
   Pressable,
   StyleSheet,
@@ -11,14 +13,15 @@ import { router } from "expo-router";
 interface MenuLateralProps {
   visible: boolean;
   onClose: () => void;
-  seccionActual:
-    | "dashboard"
-    | "productos"
-    | "categorias"
-    | "marcas"
-    | "banners"
-    | "inventario";
-}
+seccionActual:
+  | "dashboard"
+  | "productos"
+  | "categorias"
+  | "marcas"
+  | "banners"
+  | "inventario"
+  | "pedidos"
+  | "ia";}
 
 export default function MenuLateral({
   visible,
@@ -34,6 +37,30 @@ export default function MenuLateral({
     onClose();
     router.push(ruta as any);
   };
+
+
+  const cerrarSesion = async () => {
+
+  try {
+
+    await signOut(auth);
+
+    onClose();
+
+    router.replace(
+      "/cap-presentation/Views/auth/Login"
+    );
+
+  } catch(error) {
+
+    console.log(
+      "Error cerrando sesión:",
+      error
+    );
+
+  }
+
+};
 
 return (
   <View style={estilos.menuOverlay}>
@@ -304,21 +331,109 @@ return (
 
 </Pressable>
 
+{/* PEDIDOS */}
+
+<Pressable
+  style={[
+    estilos.menuItem,
+    seccionActual === "pedidos" &&
+      estilos.menuItemActivo,
+  ]}
+  onPress={() =>
+    navegar(
+      "/cap-presentation/Views/admin/AdminPedidos"
+    )
+  }
+>
+  <Ionicons
+    name="receipt-outline"
+    size={23}
+    color={
+      seccionActual === "pedidos"
+        ? "#000000"
+        : "#FFFFFF"
+    }
+  />
+
+  <Text
+    style={[
+      estilos.menuItemText,
+      seccionActual === "pedidos" &&
+        estilos.menuItemTextActivo,
+    ]}
+  >
+    Pedidos
+  </Text>
+
+  <Ionicons
+    name="chevron-forward"
+    size={18}
+    color={
+      seccionActual === "pedidos"
+        ? "#000000"
+        : "#555555"
+    }
+  />
+</Pressable>
+
+{/* ASISTENTE IA */}
+
+<Pressable
+  style={[
+    estilos.menuItem,
+    seccionActual === "ia" &&
+      estilos.menuItemActivo,
+  ]}
+  onPress={() =>
+    navegar(
+      "/cap-presentation/Views/admin/ia/"
+    )
+  }
+>
+
+  <Ionicons
+    name="sparkles-outline"
+    size={23}
+    color={
+      seccionActual === "ia"
+        ? "#000000"
+        : "#FFFFFF"
+    }
+  />
+
+
+  <Text
+    style={[
+      estilos.menuItemText,
+      seccionActual === "ia" &&
+        estilos.menuItemTextActivo,
+    ]}
+  >
+    Asistente IA
+  </Text>
+
+
+  <Ionicons
+    name="chevron-forward"
+    size={18}
+    color={
+      seccionActual === "ia"
+        ? "#000000"
+        : "#555555"
+    }
+  />
+
+</Pressable>
       </View>
 
       {/* PARTE INFERIOR */}
       <View style={estilos.menuBottom}>
 
-        <Pressable
-          style={estilos.logoutButton}
-          onPress={() => {
-            onClose();
-            router.replace(
-              "/cap-presentation/Views/auth/Login"
-            );
-          }}
-        >
-          <Ionicons
+<Pressable
+  style={estilos.logoutButton}
+  onPress={cerrarSesion}
+>
+            <Ionicons
             name="log-out-outline"
             size={23}
             color="#FFFFFF"

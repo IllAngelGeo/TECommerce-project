@@ -238,3 +238,55 @@ func DeleteBanner(c *gin.Context) {
 	)
 
 }
+
+// ==========================================
+// SUBIR IMAGEN DEL BANNER
+// ==========================================
+
+func UploadBannerImage(c *gin.Context) {
+
+	idBanner := c.Param("id")
+
+	file, header, err := c.Request.FormFile("imagen")
+
+	if err != nil {
+
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "imagen requerida",
+			},
+		)
+
+		return
+	}
+
+	defer file.Close()
+
+	url, err := service.UploadBannerImage(
+		file,
+		header,
+		idBanner,
+	)
+
+	if err != nil {
+
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"error": err.Error(),
+			},
+		)
+
+		return
+	}
+
+	c.JSON(
+		http.StatusOK,
+		gin.H{
+			"message": "imagen subida correctamente",
+			"url":     url,
+		},
+	)
+
+}

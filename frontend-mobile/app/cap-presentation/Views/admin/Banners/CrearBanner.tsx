@@ -249,13 +249,27 @@ setCargando(false);
 
 return(
 
-
 <View style={estilos.container}>
 
+  <Pressable
+    style={estilos.botonRegresar}
+    onPress={() => router.back()}
+  >
+    <Ionicons
+      name="arrow-back"
+      size={24}
+      color="#FFFFFF"
+    />
 
-<Text style={estilos.titulo}>
-Crear Banner
-</Text>
+    <Text style={estilos.textoRegresar}>
+      Regresar
+    </Text>
+  </Pressable>
+
+
+  <Text style={estilos.titulo}>
+    Crear Banner
+  </Text>
 
 
 
@@ -459,7 +473,24 @@ marginTop:30
 guardarTexto:{
 color:"#000",
 fontWeight:"bold"
-}
+},
 
+botonRegresar:{
+  flexDirection:"row",
+  alignItems:"center",
+  backgroundColor:"#1A1A1A",
+  width:120,
+  height:42,
+  borderRadius:10,
+  paddingHorizontal:12,
+  marginBottom:20,
+  gap:8,
+},
+
+textoRegresar:{
+  color:"#FFFFFF",
+  fontSize:14,
+  fontWeight:"600",
+},
 
 });

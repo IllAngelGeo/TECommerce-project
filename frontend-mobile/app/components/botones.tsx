@@ -15,6 +15,7 @@ interface BotonProps {
   width?: number;
   height?: number;
   style?: StyleProp<ViewStyle>;
+  fontWeight?: "normal" | "bold";
   onPress?: () => void;
 }
 
@@ -25,8 +26,10 @@ export const Boton = ({
   width,
   height = 50,
   style,
+  fontWeight = "normal",
   onPress,
 }: BotonProps) => {
+
   return (
     <Pressable
       style={[
@@ -44,18 +47,19 @@ export const Boton = ({
         titulo={titulo}
         tamanio={13}
         color={textColor}
+        fontWeight={fontWeight}
       />
     </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
-  boton: {
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowRadius: 5,
-    elevation: 5,
+  boton:{
+    borderRadius:10,
+    justifyContent:"center",
+    alignItems:"center",
+    shadowColor:"#000",
+    shadowRadius:5,
+    elevation:5,
   },
 });
