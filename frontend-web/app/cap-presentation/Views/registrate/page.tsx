@@ -3,40 +3,94 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { loginGoogle, registerUser } from "../../../firebase/firebase";
+
+import { registerUser } from "../../../firebase/firebase";
+
+// IMPORTANTE:
+// Si ya tienes un archivo API_URL para tu web, puedes reemplazar
+// esta constante por:
+// import { API_URL } from "../../../constants/api_url";
+
+const API_URL = "http://localhost:8080";
 
 export default function RegistroPage() {
-  const [step, setStep] = useState(1);
   const router = useRouter();
 
-  // Paso 1 - Datos personales
+  // =========================================================
+  // PASOS
+  // =========================================================
+
+  const [step, setStep] = useState(1);
+
+  // =========================================================
+  // DATOS PERSONALES
+  // =========================================================
+
   const [nombre, setNombre] = useState("");
   const [apellidoPaterno, setApellidoPaterno] = useState("");
   const [apellidoMaterno, setApellidoMaterno] = useState("");
   const [fechaTexto, setFechaTexto] = useState("");
-  const [telefono, setTelefono] = useState(""); // NUEVO: estado para teléfono
-  
-  // Paso 2 - Datos de cuenta
+  const [telefono, setTelefono] = useState("");
+
+  // =========================================================
+  // DATOS DE CUENTA
+  // =========================================================
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+
+  // =========================================================
+  // ESTADOS
+  // =========================================================
+
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
+  // =========================================================
+  // VALIDAR PASO 1
+  // =========================================================
+
   const validarPaso1 = () => {
-    if (!nombre || !apellidoPaterno || !apellidoMaterno || !fechaTexto || !telefono) {
-      setMensaje("Completa todos los campos");
+    const nombreLimpio = nombre.trim();
+    const paternoLimpio = apellidoPaterno.trim();
+    const maternoLimpio = apellidoMaterno.trim();
+
+    if (
+      !nombreLimpio ||
+      !paternoLimpio ||
+      !maternoLimpio ||
+      !fechaTexto ||
+      !telefono
+    ) {
+      setMensaje("Completa todos los campos.");
       return false;
     }
 
-    // Validar teléfono (mínimo 10 dígitos)
-    const telefonoLimpio = telefono.replace(/\D/g, '');
-    if (telefonoLimpio.length < 10) {
-      setMensaje("Ingresa un número de teléfono válido (mínimo 10 dígitos)");
+    const telefonoLimpio = telefono.replace(/\D/g, "");
+
+    if (telefonoLimpio.length !== 10) {
+      setMensaje(
+        "Ingresa un número de teléfono válido de 10 dígitos."
+      );
+      return false;
+    }
+
+    const fechaNacimiento = new Date(
+      `${fechaTexto}T00:00:00`
+    );
+
+    const hoy = new Date();
+
+    if (
+      Number.isNaN(fechaNacimiento.getTime()) ||
+      fechaNacimiento > hoy
+    ) {
+      setMensaje("Ingresa una fecha de nacimiento válida.");
       return false;
     }
 
@@ -44,35 +98,53 @@ export default function RegistroPage() {
     return true;
   };
 
+  // =========================================================
+  // VALIDAR PASO 2
+  // =========================================================
+
   const validarPaso2 = () => {
-    if (!email || !password || !confirmPassword) {
-      setMensaje("Completa todos los campos");
+    const correo = email.trim().toLowerCase();
+
+    if (!correo || !password || !confirmPassword) {
+      setMensaje("Completa todos los campos.");
+      return false;
+    }
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(correo)) {
+      setMensaje(
+        "Ingresa un correo electrónico válido."
+      );
       return false;
     }
 
     if (password.length < 6) {
-      setMensaje("La contraseña debe tener al menos 6 caracteres");
+      setMensaje(
+        "La contraseña debe tener al menos 6 caracteres."
+      );
       return false;
     }
 
     if (password !== confirmPassword) {
-      setMensaje("Las contraseñas no coinciden");
+      setMensaje("Las contraseñas no coinciden.");
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setMensaje("Ingresa un correo electrónico válido");
-      return false;
-    }
     setMensaje("");
     return true;
   };
 
+  // =========================================================
+  // NAVEGACIÓN ENTRE PASOS
+  // =========================================================
+
   const handleSiguiente = () => {
-    if (validarPaso1()) {
-      setStep(2);
-    }
+    if (!validarPaso1()) return;
+
+    setStep(2);
+    setMensaje("");
   };
 
   const handleAtras = () => {
@@ -80,398 +152,1569 @@ export default function RegistroPage() {
     setMensaje("");
   };
 
+  // =========================================================
+  // REGISTRO
+  // =========================================================
+
   const handleRegister = async () => {
+    if (isLoading) return;
     if (!validarPaso2()) return;
 
     try {
       setIsLoading(true);
       setMensaje("");
 
-      console.log("1. Iniciando registro en Firebase...");
-      
-      // 1. Firebase Auth
-      const result = await registerUser(email, password);
+      const correo = email
+        .trim()
+        .toLowerCase();
+
+      // =====================================================
+      // 1. FIREBASE AUTH
+      // =====================================================
+
+      console.log(
+        "1. Iniciando registro en Firebase..."
+      );
+
+      const result = await registerUser(
+        correo,
+        password
+      );
+
       const firebaseUser = result.user;
-      
-      console.log("2. Usuario creado en Firebase:", firebaseUser.uid);
-      console.log("3. Enviando datos al backend...");
 
-      // Limpiar el teléfono (solo dígitos)
-      const telefonoLimpio = telefono.replace(/\D/g, '');
+      console.log(
+        "2. Usuario creado:",
+        firebaseUser.uid
+      );
 
-      // 2. Enviar a backend Go
+      // =====================================================
+      // 2. BACKEND GO
+      // =====================================================
+
+      const telefonoLimpio =
+        telefono.replace(/\D/g, "");
+
       const payload = {
         id_firebase: firebaseUser.uid,
-        email: firebaseUser.email,
-        nombre: nombre,
-        apellido_paterno: apellidoPaterno,
-        apellido_materno: apellidoMaterno,
+        email: firebaseUser.email ?? correo,
+        nombre: nombre.trim(),
+        apellido_paterno:
+          apellidoPaterno.trim(),
+        apellido_materno:
+          apellidoMaterno.trim(),
         fecha_nacimiento: fechaTexto,
-        telefono: telefonoLimpio, // Usar el teléfono del estado
+        telefono: telefonoLimpio,
         provider: "firebase",
       };
 
-      console.log("4. Payload enviado:", payload);
+      console.log(
+        "3. Enviando al backend:",
+        payload
+      );
 
-      const response = await fetch("http://localhost:8080/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_URL}/auth/register`,
+        {
+          method: "POST",
 
-      console.log("5. Response status:", response.status);
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-      const data = await response.json();
-      console.log("6. Response data:", data);
+          body: JSON.stringify(payload),
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+      let data: any = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
       }
 
-      console.log("7. Registro exitoso!");
-      router.push("/home");
+      console.log(
+        "4. Backend status:",
+        response.status
+      );
 
+      console.log(
+        "5. Backend response:",
+        data
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            `Error del servidor (${response.status})`
+        );
+      }
+
+      console.log(
+        "6. Registro completado correctamente."
+      );
+
+      // =====================================================
+      // 3. NAVEGAR
+      // =====================================================
+
+      router.push(
+        "/cap-presentation/Views/home"
+      );
     } catch (error: any) {
-      console.error("❌ Error detallado:", error);
-      
-      // Manejo de errores específicos
-      if (error.code === "auth/email-already-in-use") {
-        setMensaje("Este correo electrónico ya está registrado");
-      } else if (error.code === "auth/weak-password") {
-        setMensaje("La contraseña es muy débil. Usa al menos 6 caracteres");
-      } else if (error.code === "auth/invalid-email") {
-        setMensaje("El correo electrónico no es válido");
-      } else if (error.code === "auth/network-request-failed") {
-        setMensaje("Error de red. Verifica tu conexión a internet");
-      } else if (error.message.includes("fetch")) {
-        setMensaje("No se pudo conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:8080");
-      } else if (error.message.includes("backend")) {
-        setMensaje(`Error del servidor: ${error.message}`);
+      console.error(
+        "Error registrando usuario:",
+        error
+      );
+
+      const codigo = error?.code ?? "";
+      const mensajeError =
+        error?.message ?? "";
+
+      if (
+        codigo ===
+        "auth/email-already-in-use"
+      ) {
+        setMensaje(
+          "Este correo electrónico ya está registrado."
+        );
+      } else if (
+        codigo === "auth/weak-password"
+      ) {
+        setMensaje(
+          "La contraseña es demasiado débil."
+        );
+      } else if (
+        codigo === "auth/invalid-email"
+      ) {
+        setMensaje(
+          "El correo electrónico no es válido."
+        );
+      } else if (
+        codigo ===
+        "auth/network-request-failed"
+      ) {
+        setMensaje(
+          "No fue posible comunicarse con Firebase. Verifica tu conexión."
+        );
+      } else if (
+        mensajeError
+          .toLowerCase()
+          .includes("fetch")
+      ) {
+        setMensaje(
+          "No se pudo conectar con el servidor de TeCommerce."
+        );
       } else {
-        setMensaje(`Error al registrar usuario: ${error.message || "Intenta nuevamente"}`);
+        setMensaje(
+          mensajeError ||
+            "No fue posible crear tu cuenta. Intenta nuevamente."
+        );
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleRegister = async () => {
-    try {
-      setIsGoogleLoading(true);
-      setMensaje("");
-      
-      console.log("Iniciando registro con Google...");
-      const result = await loginGoogle();
-      const user = result.user;
-      
-      console.log("Usuario Google:", user);
-      
-      // Limpiar el teléfono (solo dígitos)
-      const telefonoLimpio = telefono.replace(/\D/g, '');
-      
-      // También registrar en backend
-      const payload = {
-        id_firebase: user.uid,
-        email: user.email,
-        nombre: user.displayName || nombre || "Usuario",
-        apellido_paterno: apellidoPaterno || "",
-        apellido_materno: apellidoMaterno || "",
-        fecha_nacimiento: fechaTexto || "",
-        telefono: telefonoLimpio || "5555555555", // Usar el teléfono del estado o valor por defecto
-        provider: "google",
-      };
+  // =========================================================
+  // TELÉFONO
+  // =========================================================
 
-      const response = await fetch("http://localhost:8080/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+  const formatearTelefono = (
+    valor: string
+  ) => {
+    const soloDigitos =
+      valor.replace(/\D/g, "");
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Error en backend");
-      }
+    const limitado =
+      soloDigitos.slice(0, 10);
 
-      router.push("/home");
-    } catch (error: any) {
-      console.error("❌ Error en Google:", error);
-      setMensaje(`No se pudo registrar con Google: ${error.message}`);
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  // Función para formatear el teléfono mientras se escribe
-  const formatearTelefono = (valor: string) => {
-    // Solo permitir dígitos
-    const soloDigitos = valor.replace(/\D/g, '');
-    
-    // Limitar a 10 dígitos
-    const limitado = soloDigitos.slice(0, 10);
-    
-    // Formatear como (XXX) XXX-XXXX
     if (limitado.length <= 3) {
       return limitado;
-    } else if (limitado.length <= 6) {
-      return `(${limitado.slice(0, 3)}) ${limitado.slice(3)}`;
-    } else {
-      return `(${limitado.slice(0, 3)}) ${limitado.slice(3, 6)}-${limitado.slice(6, 10)}`;
     }
+
+    if (limitado.length <= 6) {
+      return `(${limitado.slice(
+        0,
+        3
+      )}) ${limitado.slice(3)}`;
+    }
+
+    return `(${limitado.slice(
+      0,
+      3
+    )}) ${limitado.slice(
+      3,
+      6
+    )}-${limitado.slice(6, 10)}`;
   };
 
-  const handleTelefonoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const valorFormateado = formatearTelefono(e.target.value);
-    setTelefono(valorFormateado);
+  const handleTelefonoChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setTelefono(
+      formatearTelefono(e.target.value)
+    );
   };
 
-  const ProgressIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className={`w-3 h-3 rounded-full transition-all ${step === 1 ? 'bg-white w-4 h-4' : 'bg-white/30'}`} />
-      <div className={`w-16 h-0.5 mx-2 transition-all ${step === 2 ? 'bg-white' : 'bg-white/30'}`} />
-      <div className={`w-3 h-3 rounded-full transition-all ${step === 2 ? 'bg-white w-4 h-4' : 'bg-white/30'}`} />
-    </div>
-  );
+  // =========================================================
+  // CLASE BASE INPUT
+  // =========================================================
+
+  const inputClass = `
+    h-[54px]
+    w-full
+    rounded-xl
+    border
+    border-white/10
+    bg-white/[0.045]
+    pl-12
+    pr-4
+    text-[15px]
+    text-white
+    outline-none
+    transition-all
+    placeholder:text-white/25
+    hover:border-white/20
+    focus:border-white/35
+    focus:bg-white/[0.065]
+    focus:ring-4
+    focus:ring-white/[0.035]
+  `;
+
+  // =========================================================
+  // VISTA
+  // =========================================================
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-8">
-      <div className="w-full max-w-7xl h-[88vh] rounded-3xl overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl flex">
-        
-        {/* IZQUIERDA - IMAGEN */}
-        <div className="w-1/2 flex justify-center items-center bg-black">
-          <Image src="/Images/logo_ecommerce.png" alt="Logo" width={500} height={500} priority className="object-contain"/>
-          </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
 
-        {/* DERECHA - REGISTRO */}
-        <div className="w-1/2 flex items-center justify-center bg-black/70 p-14 overflow-y-auto">
-          <div className="w-full max-w-md">
-            
-            <div className="text-center">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent mb-2">
-                TeCommerce
-              </h1>
+      {/* =====================================================
+          FONDO
+      ====================================================== */}
+
+      <div className="pointer-events-none absolute inset-0">
+
+        <div
+          className="
+            absolute
+            -left-32
+            -top-32
+            h-[420px]
+            w-[420px]
+            rounded-full
+            bg-white/[0.035]
+            blur-3xl
+          "
+        />
+
+        <div
+          className="
+            absolute
+            -bottom-40
+            right-0
+            h-[500px]
+            w-[500px]
+            rounded-full
+            bg-white/[0.025]
+            blur-3xl
+          "
+        />
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-[radial-gradient(circle_at_center,transparent_0%,#050505_75%)]
+          "
+        />
+
+      </div>
+
+      {/* =====================================================
+          CONTENEDOR
+      ====================================================== */}
+
+      <div
+        className="
+          relative
+          z-10
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          px-4
+          py-5
+          sm:px-6
+          lg:px-10
+        "
+      >
+
+        <section
+          className="
+            grid
+            w-full
+            max-w-[1380px]
+            overflow-hidden
+            rounded-[28px]
+            border
+            border-white/[0.08]
+            bg-[#080808]
+            shadow-[0_35px_120px_rgba(0,0,0,0.75)]
+            lg:min-h-[800px]
+            lg:grid-cols-[1.05fr_0.95fr]
+          "
+        >
+
+          {/* =================================================
+              PANEL IZQUIERDO
+          ================================================== */}
+
+          <div
+            className="
+              relative
+              hidden
+              overflow-hidden
+              border-r
+              border-white/[0.08]
+              bg-[#030303]
+              lg:flex
+              lg:items-center
+              lg:justify-center
+            "
+          >
+
+            {/* ILUMINACIÓN */}
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                left-1/2
+                top-1/2
+                h-[650px]
+                w-[650px]
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                bg-white/[0.035]
+                blur-[100px]
+              "
+            />
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                -left-40
+                -top-40
+                h-[420px]
+                w-[420px]
+                rounded-full
+                bg-white/[0.025]
+                blur-[90px]
+              "
+            />
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                -bottom-48
+                -right-32
+                h-[500px]
+                w-[500px]
+                rounded-full
+                bg-white/[0.03]
+                blur-[110px]
+              "
+            />
+
+            {/* CÍRCULOS */}
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                left-1/2
+                top-1/2
+                h-[560px]
+                w-[560px]
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                border
+                border-white/[0.035]
+              "
+            />
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                left-1/2
+                top-1/2
+                h-[450px]
+                w-[450px]
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                border
+                border-white/[0.045]
+              "
+            />
+
+            <div
+              className="
+                pointer-events-none
+                absolute
+                left-1/2
+                top-1/2
+                h-[340px]
+                w-[340px]
+                -translate-x-1/2
+                -translate-y-1/2
+                rounded-full
+                border
+                border-white/[0.055]
+              "
+            />
+
+            {/* LOGO */}
+
+            <div
+              className="
+                relative
+                z-10
+                flex
+                h-[520px]
+                w-[520px]
+                items-center
+                justify-center
+                xl:h-[590px]
+                xl:w-[590px]
+              "
+            >
+
+              <div
+                className="
+                  absolute
+                  h-[340px]
+                  w-[340px]
+                  rounded-full
+                  bg-white/[0.025]
+                  blur-[50px]
+                "
+              />
+
+              <Image
+                src="/Images/logo_ecommerce.png"
+                alt="TeCommerce"
+                width={500}
+                height={500}
+                priority
+                className="
+                  relative
+                  z-10
+                  h-auto
+                  w-[75%]
+                  object-contain
+                  drop-shadow-[0_25px_55px_rgba(255,255,255,0.09)]
+                "
+              />
+
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-6 text-center mt-6">
-              Crear cuenta {step}/2
-            </h3>
+            {/* ESQUINAS */}
 
-            <ProgressIndicator />
+            <div className="absolute left-8 top-8 h-8 w-8 border-l border-t border-white/10" />
+            <div className="absolute right-8 top-8 h-8 w-8 border-r border-t border-white/10" />
+            <div className="absolute bottom-8 left-8 h-8 w-8 border-b border-l border-white/10" />
+            <div className="absolute bottom-8 right-8 h-8 w-8 border-b border-r border-white/10" />
 
-            {step === 1 && (
-              <div className="space-y-4">
-                <p className="text-white text-center mb-4 font-semibold">Datos personales</p>
-                
-                <div className="relative">
-                  <Image src="https://res.cloudinary.com/demobew9m/image/upload/v1782205178/usuario_vs8oyo.png" alt="icono_usuario" width={18} height={18} priority className="absolute left-4 top-1/2 -translate-y-1/2 object-contain"/>
-                  <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" />
+          </div>
+
+          {/* =================================================
+              PANEL REGISTRO
+          ================================================== */}
+
+          <div
+            className="
+              flex
+              items-center
+              justify-center
+              bg-[#080808]
+              px-5
+              py-8
+              sm:px-8
+              lg:px-12
+              xl:px-16
+            "
+          >
+
+            <div className="w-full max-w-[480px]">
+
+              {/* LOGO MÓVIL */}
+
+              <div className="mb-5 flex justify-center lg:hidden">
+
+                <Image
+                  src="/Images/logo_ecommerce.png"
+                  alt="TeCommerce"
+                  width={120}
+                  height={120}
+                  priority
+                  className="object-contain"
+                />
+
+              </div>
+
+              {/* CABECERA */}
+
+              <div className="mb-6">
+
+                <div
+                  className="
+                    mb-3
+                    flex
+                    items-center
+                    justify-between
+                  "
+                >
+
+                  <p
+                    className="
+                      text-xs
+                      font-semibold
+                      uppercase
+                      tracking-[0.25em]
+                      text-white/35
+                    "
+                  >
+                    Crear cuenta
+                  </p>
+
+                  <span className="text-xs font-medium text-white/35">
+                    Paso {step} de 2
+                  </span>
+
                 </div>
 
-                <div className="relative">
-                  <Image src="" alt="icono_usuario" width={18} height={18} priority className="object-contain"/>
+                <h1
+                  className="
+                    text-3xl
+                    font-semibold
+                    tracking-[-0.04em]
+                    sm:text-4xl
+                  "
+                >
+                  Únete a TeCommerce
+                </h1>
 
-                  <input type="text" value={apellidoPaterno} onChange={(e) => setApellidoPaterno(e.target.value)} placeholder="Apellido paterno" className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" />
+                <p
+                  className="
+                    mt-3
+                    text-sm
+                    leading-6
+                    text-white/40
+                  "
+                >
+                  {step === 1
+                    ? "Comencemos con tu información personal."
+                    : "Ahora crea los datos de acceso para tu cuenta."}
+                </p>
+
+              </div>
+
+              {/* =================================================
+                  INDICADOR
+              ================================================== */}
+
+              <div className="mb-7">
+
+                <div className="mb-2 flex items-center justify-between">
+
+                  <span
+                    className={`
+                      text-xs
+                      font-medium
+                      ${
+                        step >= 1
+                          ? "text-white"
+                          : "text-white/30"
+                      }
+                    `}
+                  >
+                    Información personal
+                  </span>
+
+                  <span
+                    className={`
+                      text-xs
+                      font-medium
+                      ${
+                        step === 2
+                          ? "text-white"
+                          : "text-white/30"
+                      }
+                    `}
+                  >
+                    Cuenta
+                  </span>
+
                 </div>
 
-                <div className="relative">
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  <input 
-                    type="text" 
-                    value={apellidoMaterno} 
-                    onChange={(e) => setApellidoMaterno(e.target.value)} 
-                    placeholder="Apellido materno" 
-                    className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" 
+                <div className="h-1 overflow-hidden rounded-full bg-white/[0.07]">
+
+                  <div
+                    className={`
+                      h-full
+                      rounded-full
+                      bg-white
+                      transition-all
+                      duration-500
+                      ${
+                        step === 1
+                          ? "w-1/2"
+                          : "w-full"
+                      }
+                    `}
                   />
+
                 </div>
 
-               {/* Fecha de nacimiento CON LABEL Y MÁS ESPACIO */}
-<div className="space-y-2 mb-6">
-  <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-    Fecha de nacimiento
-  </label>
-  <div className="relative">
-    <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="8" y1="2" x2="8" y2="6" />
+              </div>
+
+              {/* =================================================
+                  MENSAJE
+              ================================================== */}
+
+              {mensaje && (
+
+                <div
+                  className="
+                    mb-5
+                    flex
+                    items-start
+                    gap-3
+                    rounded-xl
+                    border
+                    border-red-500/20
+                    bg-red-500/[0.07]
+                    px-4
+                    py-3
+                    text-sm
+                    text-red-300
+                  "
+                >
+
+                  <div
+                    className="
+                      mt-[2px]
+                      flex
+                      h-5
+                      w-5
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-full
+                      border
+                      border-red-400/40
+                      text-[11px]
+                      font-bold
+                    "
+                  >
+                    !
+                  </div>
+
+                  <span>{mensaje}</span>
+
+                </div>
+
+              )}
+
+              {/* =================================================
+                  PASO 1
+              ================================================== */}
+
+              {step === 1 && (
+
+                <div className="space-y-4">
+
+                  {/* NOMBRE */}
+
+                  <div>
+
+                    <label
+                      htmlFor="nombre"
+                      className="
+                        mb-2
+                        block
+                        text-sm
+                        font-medium
+                        text-white/65
+                      "
+                    >
+                      Nombre
+                    </label>
+
+                    <div className="relative">
+
+                      <UserIcon />
+
+                      <input
+                        id="nombre"
+                        type="text"
+                        autoComplete="given-name"
+                        value={nombre}
+                        onChange={(e) =>
+                          setNombre(e.target.value)
+                        }
+                        placeholder="Tu nombre"
+                        className={inputClass}
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {/* APELLIDOS */}
+
+                  <div
+                    className="
+                      grid
+                      gap-4
+                      sm:grid-cols-2
+                    "
+                  >
+
+                    <div>
+
+                      <label
+                        htmlFor="apellidoPaterno"
+                        className="
+                          mb-2
+                          block
+                          text-sm
+                          font-medium
+                          text-white/65
+                        "
+                      >
+                        Apellido paterno
+                      </label>
+
+                      <div className="relative">
+
+                        <UserIcon />
+
+                        <input
+                          id="apellidoPaterno"
+                          type="text"
+                          autoComplete="family-name"
+                          value={apellidoPaterno}
+                          onChange={(e) =>
+                            setApellidoPaterno(
+                              e.target.value
+                            )
+                          }
+                          placeholder="Paterno"
+                          className={inputClass}
+                        />
+
+                      </div>
+
+                    </div>
+
+                    <div>
+
+                      <label
+                        htmlFor="apellidoMaterno"
+                        className="
+                          mb-2
+                          block
+                          text-sm
+                          font-medium
+                          text-white/65
+                        "
+                      >
+                        Apellido materno
+                      </label>
+
+                      <div className="relative">
+
+                        <UserIcon />
+
+                        <input
+                          id="apellidoMaterno"
+                          type="text"
+                          value={apellidoMaterno}
+                          onChange={(e) =>
+                            setApellidoMaterno(
+                              e.target.value
+                            )
+                          }
+                          placeholder="Materno"
+                          className={inputClass}
+                        />
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {/* FECHA */}
+
+                  <div>
+
+                    <label
+                      htmlFor="fechaNacimiento"
+                      className="
+                        mb-2
+                        block
+                        text-sm
+                        font-medium
+                        text-white/65
+                      "
+                    >
+                      Fecha de nacimiento
+                    </label>
+
+                    <div className="relative">
+
+                      <CalendarIcon />
+
+                      <input
+                        id="fechaNacimiento"
+                        type="date"
+                        value={fechaTexto}
+                        onChange={(e) =>
+                          setFechaTexto(
+                            e.target.value
+                          )
+                        }
+                        className={`
+                          ${inputClass}
+                          [color-scheme:dark]
+                        `}
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {/* TELÉFONO */}
+
+                  <div>
+
+                    <label
+                      htmlFor="telefono"
+                      className="
+                        mb-2
+                        block
+                        text-sm
+                        font-medium
+                        text-white/65
+                      "
+                    >
+                      Teléfono
+                    </label>
+
+                    <div className="relative">
+
+                      <PhoneIcon />
+
+                      <input
+                        id="telefono"
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        value={telefono}
+                        onChange={
+                          handleTelefonoChange
+                        }
+                        placeholder="(555) 123-4567"
+                        maxLength={14}
+                        className={inputClass}
+                      />
+
+                    </div>
+
+                    <p
+                      className="
+                        mt-2
+                        text-[11px]
+                        text-white/25
+                      "
+                    >
+                      Ingresa un número de 10 dígitos.
+                    </p>
+
+                  </div>
+
+                  {/* SIGUIENTE */}
+
+                  <button
+                    type="button"
+                    onClick={handleSiguiente}
+                    className="
+                      mt-2
+                      flex
+                      h-[54px]
+                      w-full
+                      items-center
+                      justify-center
+                      gap-2
+                      rounded-xl
+                      bg-white
+                      text-sm
+                      font-semibold
+                      text-black
+                      transition-all
+                      hover:bg-neutral-200
+                      active:scale-[0.99]
+                    "
+                  >
+                    Continuar
+
+                    <ArrowRightIcon />
+
+                  </button>
+
+                  {/* LOGIN */}
+
+                  <div
+                    className="
+                      border-t
+                      border-white/[0.07]
+                      pt-5
+                      text-center
+                    "
+                  >
+
+                    <p className="text-sm text-white/40">
+                      ¿Ya tienes una cuenta?{" "}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push("/")
+                        }
+                        className="
+                          font-semibold
+                          text-white
+                          transition
+                          hover:text-white/65
+                        "
+                      >
+                        Iniciar sesión
+                      </button>
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+              )}
+
+              {/* =================================================
+                  PASO 2
+              ================================================== */}
+
+              {step === 2 && (
+
+                <div className="space-y-4">
+
+                  {/* EMAIL */}
+
+                  <div>
+
+                    <label
+                      htmlFor="email"
+                      className="
+                        mb-2
+                        block
+                        text-sm
+                        font-medium
+                        text-white/65
+                      "
+                    >
+                      Correo electrónico
+                    </label>
+
+                    <div className="relative">
+
+                      <EmailIcon />
+
+                      <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) =>
+                          setEmail(e.target.value)
+                        }
+                        placeholder="correo@ejemplo.com"
+                        className={inputClass}
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {/* CONTRASEÑA */}
+
+                  <div>
+
+                    <label
+                      htmlFor="password"
+                      className="
+                        mb-2
+                        block
+                        text-sm
+                        font-medium
+                        text-white/65
+                      "
+                    >
+                      Contraseña
+                    </label>
+
+                    <div className="relative">
+
+                      <LockIcon />
+
+                      <input
+                        id="password"
+                        type={
+                          showPassword
+                            ? "text"
+                            : "password"
+                        }
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) =>
+                          setPassword(e.target.value)
+                        }
+                        placeholder="Mínimo 6 caracteres"
+                        className={`
+                          ${inputClass}
+                          pr-14
+                        `}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowPassword(
+                            (actual) => !actual
+                          )
+                        }
+                        aria-label={
+                          showPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                        className="
+                          absolute
+                          right-4
+                          top-1/2
+                          -translate-y-1/2
+                          rounded-lg
+                          p-1
+                          text-white/40
+                          transition
+                          hover:bg-white/10
+                          hover:text-white
+                        "
+                      >
+                        <EyeIcon
+                          abierto={showPassword}
+                        />
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                  {/* CONFIRMAR */}
+
+                  <div>
+
+                    <label
+                      htmlFor="confirmPassword"
+                      className="
+                        mb-2
+                        block
+                        text-sm
+                        font-medium
+                        text-white/65
+                      "
+                    >
+                      Confirmar contraseña
+                    </label>
+
+                    <div className="relative">
+
+                      <LockIcon />
+
+                      <input
+                        id="confirmPassword"
+                        type={
+                          showConfirmPassword
+                            ? "text"
+                            : "password"
+                        }
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) =>
+                          setConfirmPassword(
+                            e.target.value
+                          )
+                        }
+                        placeholder="Repite tu contraseña"
+                        className={`
+                          ${inputClass}
+                          pr-14
+                        `}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(
+                            (actual) => !actual
+                          )
+                        }
+                        aria-label={
+                          showConfirmPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                        className="
+                          absolute
+                          right-4
+                          top-1/2
+                          -translate-y-1/2
+                          rounded-lg
+                          p-1
+                          text-white/40
+                          transition
+                          hover:bg-white/10
+                          hover:text-white
+                        "
+                      >
+                        <EyeIcon
+                          abierto={
+                            showConfirmPassword
+                          }
+                        />
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                  {/* BOTONES */}
+
+                  <div
+                    className="
+                      grid
+                      grid-cols-2
+                      gap-3
+                      pt-2
+                    "
+                  >
+
+                    <button
+                      type="button"
+                      onClick={handleAtras}
+                      disabled={isLoading}
+                      className="
+                        flex
+                        h-[54px]
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        border
+                        border-white/10
+                        bg-white/[0.04]
+                        text-sm
+                        font-semibold
+                        text-white
+                        transition
+                        hover:bg-white/[0.08]
+                        disabled:cursor-not-allowed
+                        disabled:opacity-50
+                      "
+                    >
+                      <ArrowLeftIcon />
+
+                      Atrás
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleRegister}
+                      disabled={isLoading}
+                      className="
+                        flex
+                        h-[54px]
+                        items-center
+                        justify-center
+                        gap-2
+                        rounded-xl
+                        bg-white
+                        text-sm
+                        font-semibold
+                        text-black
+                        transition
+                        hover:bg-neutral-200
+                        active:scale-[0.99]
+                        disabled:cursor-not-allowed
+                        disabled:opacity-50
+                      "
+                    >
+
+                      {isLoading ? (
+                        <>
+                          <span
+                            className="
+                              h-4
+                              w-4
+                              animate-spin
+                              rounded-full
+                              border-2
+                              border-black/20
+                              border-t-black
+                            "
+                          />
+
+                          Creando...
+                        </>
+                      ) : (
+                        <>
+                          Crear cuenta
+
+                          <CheckIcon />
+                        </>
+                      )}
+
+                    </button>
+
+                  </div>
+
+                  {/* VOLVER AL LOGIN */}
+
+                  <div
+                    className="
+                      border-t
+                      border-white/[0.07]
+                      pt-5
+                      text-center
+                    "
+                  >
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push("/")
+                      }
+                      className="
+                        text-sm
+                        text-white/40
+                        transition
+                        hover:text-white
+                      "
+                    >
+                      Ya tengo una cuenta
+                    </button>
+
+                  </div>
+
+                </div>
+
+              )}
+
+              {/* FOOTER */}
+
+              <p
+                className="
+                  mt-6
+                  text-center
+                  text-[11px]
+                  leading-5
+                  text-white/20
+                "
+              >
+                Al crear una cuenta aceptas los términos y
+                condiciones y el aviso de privacidad de
+                TeCommerce.
+              </p>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+    </main>
+  );
+}
+
+// =========================================================
+// ICONOS
+// =========================================================
+
+function UserIcon() {
+  return (
+    <svg
+      className="
+        pointer-events-none
+        absolute
+        left-4
+        top-1/2
+        -translate-y-1/2
+        text-white/35
+      "
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg
+      className="
+        pointer-events-none
+        absolute
+        left-4
+        top-1/2
+        -translate-y-1/2
+        text-white/35
+      "
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="18"
+        rx="2"
+      />
       <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
-    <input type="date" value={fechaTexto} onChange={(e) => setFechaTexto(e.target.value)} placeholder="Fecha de nacimiento" className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500 [color-scheme:dark]" />
-  </div>
-</div>
+  );
+}
 
-                {/* NUEVO: Campo de teléfono */}
-                <div className="relative">
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                  <input 
-                    type="tel" 
-                    value={telefono} 
-                    onChange={handleTelefonoChange} 
-                    placeholder="Teléfono (10 dígitos)" 
-                    className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" 
-                    maxLength={14} // (XXX) XXX-XXXX
-                  />
-                </div>
+function PhoneIcon() {
+  return (
+    <svg
+      className="
+        pointer-events-none
+        absolute
+        left-4
+        top-1/2
+        -translate-y-1/2
+        text-white/35
+      "
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  );
+}
 
-                <button 
-                  onClick={handleSiguiente} 
-                  className="w-full py-3 bg-white hover:bg-gray-200 rounded-xl text-black font-semibold transition-all shadow-lg flex items-center justify-center gap-2 mt-6"
-                >
-                  Siguiente
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
-                  </svg>
-                </button>
-              </div>
-            )}
+function EmailIcon() {
+  return (
+    <svg
+      className="
+        pointer-events-none
+        absolute
+        left-4
+        top-1/2
+        -translate-y-1/2
+        text-white/35
+      "
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect
+        x="2"
+        y="4"
+        width="20"
+        height="16"
+        rx="2"
+      />
+      <path d="m22 7-10 7L2 7" />
+    </svg>
+  );
+}
 
-            {step === 2 && (
-              <div className="space-y-4">
-                <p className="text-white text-center mb-4 font-semibold">Datos de cuenta</p>
+function LockIcon() {
+  return (
+    <svg
+      className="
+        pointer-events-none
+        absolute
+        left-4
+        top-1/2
+        -translate-y-1/2
+        text-white/35
+      "
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect
+        x="3"
+        y="11"
+        width="18"
+        height="11"
+        rx="2"
+      />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
 
-                <div className="relative">
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22 7-10 7L2 7" />
-                  </svg>
-                  <input 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    placeholder="Correo electrónico" 
-                    className="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" 
-                  />
-                </div>
+function EyeIcon({
+  abierto,
+}: {
+  abierto: boolean;
+}) {
+  if (!abierto) {
+    return (
+      <svg
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+        <circle
+          cx="12"
+          cy="12"
+          r="3"
+        />
+      </svg>
+    );
+  }
 
-                <div className="relative">
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    placeholder="Contraseña" 
-                    className="w-full px-4 py-3 pl-11 pr-14 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-                  >
-                    {showPassword ? "🙈" : "👁️"}
-                  </button>
-                </div>
+  return (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m3 3 18 18" />
+      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+      <path d="M9.9 4.24A9.77 9.77 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <path d="M6.61 6.61C3.83 8.47 2 12 2 12s3.5 8 10 8a9.7 9.7 0 0 0 4.01-.87" />
+    </svg>
+  );
+}
 
-                <div className="relative">
-                  <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <input 
-                    type={showConfirmPassword ? "text" : "password"} 
-                    value={confirmPassword} 
-                    onChange={(e) => setConfirmPassword(e.target.value)} 
-                    placeholder="Confirmar contraseña" 
-                    className="w-full px-4 py-3 pl-11 pr-14 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-gray-500" 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-                  >
-                    {showConfirmPassword ? "🙈" : "👁️"}
-                  </button>
-                </div>
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </svg>
+  );
+}
 
-                <div className="flex gap-3 mt-6">
-                  <button 
-                    onClick={handleAtras} 
-                    className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white font-semibold transition-all border border-white/20 flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="19" y1="12" x2="5" y2="12" />
-                      <polyline points="12 19 5 12 12 5" />
-                    </svg>
-                    Atrás
-                  </button>
-                  <button 
-                    onClick={handleRegister} 
-                    disabled={isLoading} 
-                    className="flex-1 py-3 bg-white hover:bg-gray-200 rounded-xl text-black font-semibold transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Cargando..." : "Registrarse"}
-                    {!isLoading && (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
+function ArrowLeftIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 19 5 12 12 5" />
+    </svg>
+  );
+}
 
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/20"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-black/70 text-gray-400">O regístrate con</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={handleGoogleRegister} 
-                  disabled={isGoogleLoading} 
-                  className="w-full flex items-center justify-center gap-3 py-3 bg-black hover:bg-gray-800 rounded-xl transition-all shadow-md border border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                  </svg>
-                  <span className="text-white font-medium">
-                    {isGoogleLoading ? "Conectando..." : " Google"}
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {step === 1 && (
-              <div className="text-center text-sm text-gray-400 mt-6">
-                ¿Ya tienes una cuenta?{" "}
-                <button 
-                  type="button"  
-                  onClick={() => router.push("/")} 
-                  className="text-white hover:text-gray-400"
-                >
-                  Inicia sesión aquí
-                </button>
-              </div>
-            )}
-
-            {mensaje && (
-              <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <circle cx="12" cy="16" r="0.5" fill="#EF4444" />
-                </svg>
-                <span className="text-red-400 text-sm">{mensaje}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+function CheckIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }

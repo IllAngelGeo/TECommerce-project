@@ -1,20 +1,17 @@
 {
   "expo": {
     "name": "TeCommerce",
-"slug": "frontend-mobile",
+    "slug": "frontend-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "tecommerce",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "icon": "./assets/logo_tecommerce.png",
-
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/logo_tecommerce.png"
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo_tecommerce.png",
@@ -30,35 +27,39 @@
       "package": "com.kevin_alexis.frontendmobile",
       "googleServicesFile": "./google-services.json"
     },
-
     "web": {
       "output": "static"
     },
-
-    "plugins": [
-      "expo-router",
-      
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/logo_tecommerce.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000000",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      "@react-native-community/datetimepicker",
-      "expo-web-browser"
-    ],
-
+"plugins": [
+  "expo-router",
+  [
+    "expo-splash-screen",
+    {
+      "image": "./assets/logo_tecommerce.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#000000",
+      "dark": {
+        "backgroundColor": "#000000"
+      }
+    }
+  ],
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "usesCleartextTraffic": true
+      }
+    }
+  ],
+  "@react-native-community/datetimepicker",
+  "expo-web-browser",
+  "expo-font"
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {},
       "eas": {
